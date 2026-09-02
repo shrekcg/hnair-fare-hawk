@@ -395,26 +395,51 @@ def _safe_int(value: Any) -> int | None:
     return None
 
 
+def _sign_refresh_enabled() -> bool:
+    """是否开启 stime 刷新 + 官方算法重签（config.sign_refresh，默认关闭）。"""
+    config = _read_json_file(BASE_DIR / "config.json")
+    if not isinstance(config, dict):
+        return False
+    return bool(config.get("sign_refresh", False))
+
+
 def _make_hnair_sign(
     headers: Dict[str, str],
     query: Dict[str, str],
     payload: Dict[str, Any],
 ) -> str:
     """
-    根据海航 H5 前端逻辑生成 hnairSign。
-    参考自官方前端静态资源。
-    """
-    appver = str(headers.get("appver", REQUEST_HEADERS.get("appver", ""))).strip()
-    did = str(payload.get("common", {}).get("did", "")).strip()
-    stime = str(payload.get("common", {}).get("stime", "")).strip()
-    token = str(query.get("token", "")).strip()
+    海航 H5 官方签名算法（2026-09-02 从 app.ff7f308e1a.js 逆向确认）。
 
-    base = f"{SIGN_HARD_CODE}{appver}{did}{stime}{token}"
-    # 使用 SHA1（40字符）而不是 SHA256（64字符），原签名是 SHA1
-    # 返回大写签名（原curl签名是大写的）
+    message = concat(
+        headers 中 key 以 "hna" 开头的值（key 字典序）,
+        query 的所有值（key 字典序，不含 hnairSign 本身）,
+        payload 中 common∪data 合并后所有标量值的值（key 字典序）,
+        certificateHash,
+    )
+    sign = HMAC-SHA1(message, key=hardCode).hexdigest().upper()
+    已用真实抓包请求验证与线上 hnairSign 完全一致。
+    """
+    hna_vals = [str(headers[k]) for k in sorted(headers) if str(k).startswith("hna")]
+    q_vals = [str(query[k]) for k in sorted(query) if k != "hnairSign"]
+
+    merged: Dict[str, Any] = {}
+    common = payload.get("common")
+    if isinstance(common, dict):
+        merged.update(common)
+    data = payload.get("data")
+    if isinstance(data, dict):
+        merged.update(data)
+    d_vals = [
+        str(merged[k])
+        for k in sorted(merged)
+        if isinstance(merged[k], (int, float, str, bool))
+    ]
+
+    message = "".join(hna_vals) + "".join(q_vals) + "".join(d_vals) + SIGN_CERTIFICATE_HASH
     return hmac.new(
-        SIGN_CERTIFICATE_HASH.encode("utf-8"),
-        base.encode("utf-8"),
+        SIGN_HARD_CODE.encode("utf-8"),
+        message.encode("utf-8"),
         hashlib.sha1,
     ).hexdigest().upper()
 
@@ -652,10 +677,16 @@ def _build_request_profile(
     to_code: str,
     date: str,
     fare_type: str = "normal",
+    sign_refresh: bool | None = None,
 ) -> Dict[str, Any]:
     """
     构建请求 profile（query/headers/payload）。
     自动从环境变量/文件/远端接口加载凭证。
+
+    sign_refresh：
+    - None  按 config.sign_refresh 决定是否刷新 stime 并重签；
+    - False 强制不刷新（用于验签失败时回退原始抓包签名）；
+    - True  强制刷新。
     """
     captured_profile = _load_captured_request_profile(fare_type)
     if captured_profile:
@@ -673,6 +704,21 @@ def _build_request_profile(
             captured_profile["url"] = REQUEST_URL_PLUS
 
         captured_profile["payload"] = payload
+
+        # 优化项 7：stime 刷新 + 官方算法重签（默认关闭）。
+        # 开启后每次请求时间戳新鲜，消除“永恒时间戳”风控特征；
+        # 若服务器不认新签名，fetch_price_status 会自动回退原始抓包签名。
+        if sign_refresh is not False and (sign_refresh is True or _sign_refresh_enabled()):
+            common = payload.setdefault("common", {})
+            if not isinstance(common, dict):
+                common = payload["common"] = {}
+            common["stime"] = int(time.time() * 1000)
+            captured_profile["query"]["hnairSign"] = _make_hnair_sign(
+                headers=captured_profile["headers"],
+                query=captured_profile["query"],
+                payload=payload,
+            )
+
         return captured_profile
 
     creds = _load_credentials()
@@ -783,14 +829,9 @@ def _request_proxies(proxy: str) -> Dict[str, str] | None:
     return {"http": proxy, "https": proxy}
 
 
-def fetch_price_status(
-    from_code: str,
-    to_code: str,
-    date: str,
-    fare_type: str = "normal",
-) -> "tuple[str, List[Dict[str, Any]]]":
+def _request_price(profile: Dict[str, Any]) -> "tuple[str, List[Dict[str, Any]]]":
     """
-    带状态分类的抓价接口。
+    用给定 profile 执行一次抓价请求并解析。
 
     返回 (status, fares)：
     - "ok"      ：正常返回，fares 为可购航班列表；
@@ -800,15 +841,6 @@ def fetch_price_status(
 
     鉴权失败（401/403/验签错误/占位符）一律抛 TokenExpiredError。
     """
-    profile = _build_request_profile(
-        from_code=from_code,
-        to_code=to_code,
-        date=date,
-        fare_type=fare_type,
-    )
-    if not profile:
-        return "network", []
-
     query = dict(profile.get("query", {}))
     headers = dict(profile.get("headers", {}))
     payload = dict(profile.get("payload", {}))
@@ -891,6 +923,49 @@ def fetch_price_status(
         )
 
     return "ok", results
+
+
+def fetch_price_status(
+    from_code: str,
+    to_code: str,
+    date: str,
+    fare_type: str = "normal",
+) -> "tuple[str, List[Dict[str, Any]]]":
+    """
+    带状态分类的抓价接口。
+
+    返回 (status, fares)：见 _request_price。
+
+    开启 config.sign_refresh 后：先以刷新 stime + 重签的 profile 请求，
+    若服务器返回验签错误，自动用未刷新的原始抓包签名重发一次（保证抓取效果不劣化）。
+    """
+    profile = _build_request_profile(
+        from_code=from_code,
+        to_code=to_code,
+        date=date,
+        fare_type=fare_type,
+    )
+    if not profile:
+        return "network", []
+
+    refresh_enabled = _sign_refresh_enabled() and bool(profile.get("preserve_captured_sign"))
+    fallback_profile = None
+    if refresh_enabled:
+        fallback_profile = _build_request_profile(
+            from_code=from_code,
+            to_code=to_code,
+            date=date,
+            fare_type=fare_type,
+            sign_refresh=False,
+        )
+
+    try:
+        return _request_price(profile)
+    except TokenExpiredError:
+        # 重签被服务器拒绝时，回退到原始抓包签名重发，保持与旧行为一致。
+        if fallback_profile is not None:
+            return _request_price(fallback_profile)
+        raise
 
 
 def real_fetch_price(from_code: str, to_code: str, date: str, fare_type: str = "normal") -> List[Dict[str, Any]]:

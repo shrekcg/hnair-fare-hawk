@@ -71,17 +71,16 @@ cd /Users/Wcg/Desktop/Project_local/海航监控
 - [x] **端到端验收通过**：PLUS 端点修正后 daemon 抓到 JD5290/HU7397 各 199 元 → 命中阈值 → 微信已推送（15:20，2 条低价提醒 + 1 条链路验证）
 - [x] **优化批次1 已上线（提交 67086af）**：安全绑定 127.0.0.1、日志/历史轮转、任务级错峰、凭证失败退避、结果分类、价格历史、自适应轮询、可选代理、页面任务启停开关（12/12 测试）
 - [ ] （可选）用户补抓「普通票价」cURL 并导入，开通普通票价监控（代码路径已完整：URL 两个入口、任务页「普通票价」选项、fare_type 分发都在；但无 normal_curl 时走静态模板+本地重签，实测 E00001 验签错误，见 REVISION_NOTES F4）
-- [ ] 优化项 7「stime 刷新+重签」：阻塞于签名算法逆向（见 REVISION_NOTES F2），后续专项
+- [x] **签名算法逆向完成（未提交 → 已提交）**：官方 `_makeSign` = HMAC-SHA1(hna 头 + query 值 + payload 标量值 + certificateHash, hardCode)，本地 `_make_hnair_sign` 已对齐；离线复刻逐字符一致，在线双跑同航班同价格；`sign_refresh` 开关默认关闭，失败自动回退原签名（16/16 测试）
 
 ### 关键结论（2026-09-02 排查记录）
 
 1. **PLUS 抓包接口抓错了**：用户抓的是 `airCtLowFareSearch`（普通低价接口），对该接口 PLUS 查询恒返回 `0903 无航班`。
    **正确的 PLUS 端点固定为 `https://app.hnair.com/ticket/lfs/ffl/airLowFareSearch`**（fetcher 模板里原本就有），
    已在 `backend/fetcher.py` 的 `_build_request_profile` 中对 plus 强制使用该 URL（2026-09-02 提交）。
-2. **签名算法对不上线上**：`_make_hnair_sign` 重算结果与抓包签名不一致（比对为 False），
-   因此改 passenger/specialZone 等任何参数后重新签名必然 `验签错误 E00001`。
-   结论：**不要改动抓包 payload 里的任何字段**，只换 origin/destination/departureDate（这三个字段不在签名内，已验证服务器接受）。
-   签名算法本身留给后续优化（对齐官方前端 JS 算法）再做。
+2. **签名算法已对齐线上（2026-09-02 解决）**：逆向 m.hnair.com 前端 bundle `app.ff7f308e1a.js` 拿到官方 `_makeSign`，
+   本地重写 `_make_hnair_sign` 后重算签名与抓包逐字符一致；刷新 `common.stime=now` 重签被服务器接受（双跑：原签名 vs 重签均 200，同航班同价格）。
+   因此现在可以安全地改 payload 字段（passenger/specialZone 等）再重签；旧结论「不要改动任何字段」仅适用于未开启签名对齐前的旧实现。
 3. 抓包 cURL 含 token/hnairSign/cookie 等凭证，已暴露在聊天记录中；验收完成后建议用户重新抓取覆盖。
 
 ## 六、卡点处理约定

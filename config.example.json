@@ -23,5 +23,6 @@
   },
   "normal_curl": "",
   "plus_curl": "",
-  "proxy": ""
+  "proxy": "",
+  "sign_refresh": false
 }

@@ -81,7 +81,7 @@
 | 4 | 结果分类返回 + 日志区分 | ✅ 已实现（fetch_price_status：ok/network/parse/empty；429/5xx/无票/解析失败日志可区分） |
 | 5 | 价格历史存储 | ✅ 已实现（price_history.jsonl，5MB 轮转，页面最近 50 条展示） |
 | 6 | 自适应轮询频率 | ✅ 已实现（有价 → 间隔减半不下探下限；无价 → ×1.5 封顶夜间 2 倍） |
-| 7 | stime 刷新 + 重签兜底 | ⛔ 阻塞：签名算法与线上不一致（见 F2），需先逆向官方前端 JS |
+| 7 | stime 刷新 + 重签兜底 | ✅ 已实现（已逆向官方前端算法并验证，见 F5；config 开关 `sign_refresh` 默认 False，失败自动回退原签名） |
 | 8 | 凭证字段齐全性校验（sens/blackBox/riskToken） | 📋 文档记录：抓包模板原样保留，字段缺失风险已识别，暂不阻断（避免误伤未配置普通票价的情况） |
 | 9 | 可选代理支持 | ✅ 已实现（config.proxy → fetcher proxies，页面高级设置可配） |
 | 10 | 日志轮转 | ✅ 已实现（run_log 超 1MB 轮转保留 1 份；历史 5MB 轮转） |
@@ -112,11 +112,11 @@
 - 官网「PLUS会员专属抢票通道」展示 ¥199 的请求实际走 **`https://app.hnair.com/ticket/lfs/ffl/airLowFareSearch`**（fetcher 模板 REQUEST_URL_PLUS 原本就正确）。
 - 已修复：`_build_request_profile` 对 `fare_type == "plus"` 强制使用 REQUEST_URL_PLUS，不再沿用抓包 URL。修复后实测返回 JD5290 / HU7397，`minLowPrice=199`（含税 319，税费 120），与官网截图一致；daemon 命中阈值并成功推送微信。
 
-### F2. 本地签名算法与线上不一致（重要，影响后续优化）
-- 实测：`_make_hnair_sign` 用抓包的 appver/did/stime/token 重算，结果与抓包 `hnairSign` **不一致**（比对 False）。
-- 后果：任何「改动 payload 字段 + 重签」的请求都会收到 `E00001 验签错误`（试过 passenger=ADT:1、去掉 specialZone 均如此）。
-- 约束：**目前只能原样保留抓包 payload**，每轮只替换 origin/destination/departureDate（实测这三个字段不在签名内，服务器接受）。
-- 影响优化项 4/7（stime 刷新 + 重签兜底）：必须先逆向官方前端 JS 拿到真实签名算法，否则该项无法落地。可留作后续专项。
+### F2. 本地签名算法与线上不一致（重要，2026-09-02 已解决）
+- 原实测：`_make_hnair_sign` 用抓包的 appver/did/stime/token 重算，结果与抓包 `hnairSign` **不一致**（比对 False）。
+- 根因：旧实现把 secret/message 用反，且字段组合错（抓包里的 appver/did/stime/token 并不参与签名）。
+- 已解决：逆向 m.hnair.com 前端 bundle `app.ff7f308e1a.js` 拿到官方 `_makeSign` 算法并重写本地实现（见 F5），
+  重算签名与抓包签名逐字符一致；stime 刷新 + 重签被服务器接受（双跑验证同航班同价格）。
 
 ### F4. 普通票价「代码已支持、实际暂不可用」（2026-09-02 实测）
 - 代码路径完整：`REQUEST_URL`（普通入口 `airLowFareSearch`）、`_build_request_profile(fare_type="normal")`、任务页「普通票价」选项都存在，前端也不强制要求 `normal_curl`。
@@ -130,3 +130,22 @@
   - `/lfs/ffl/airLowFareSearch` → 200 正常出票
   - `/lfs/airCtLowFareSearch` → 200（无 PLUS 航班，返回 0903）
 - 说明签名验的是 query + headers + payload 要素，不含 path；这也是 F1 修复能成立的前提。
+
+### F5. 签名算法逆向成功（本地 `_make_hnair_sign` 已对齐官方，2026-09-02 验证）
+- 来源：下载 m.hnair.com 首页 JS bundle `app.ff7f308e1a.js`（1.5MB，含全部关键词），定位官方算法模块 `_makeSign`。
+- 官方算法（已复刻到 `backend/fetcher.py::_make_hnair_sign`）：
+  ```
+  message = concat(
+    headers 中 key 以 "hna" 开头的值（key 按字典序：hna-app=APP + hna-channel=HTML5），
+    query 所有值（key 字典序，排除 hnairSign 本身），
+    payload 中 common∪data 合并后所有标量值（key 字典序，数字/字符串/布尔），
+    certificateHash = 6093941774D84495A5D15D8F909CAA1E,
+  )
+  sign = HMAC-SHA1(message, key = hardCode = 21047C596EAD45209346AE29F0350491).hexdigest().upper()
+  ```
+- 验证链：
+  1. 离线复刻（scratchpad/sign_repro.py）：传抓包原始 query/payload → 重算签名与抓包 `hnairSign` **逐字符一致**（D7C49B6A6B...569CD586E4）。
+  2. 在线双跑（scratchpad/sign_compare2.py，真实凭证）：D1 原抓包签名 vs D2 刷新 `common.stime=now(ms)` + 官方重签 → 均 HTTP 200，返回同一批航班（JD5290/HU7397 各 ¥199）。
+  3. 结论：**stime 刷新 + 重签被服务器接受，抓取效果与现状完全一致**，风控特征（陈旧 stime）解除。
+- 落地形态：`config.sign_refresh`（默认 False）→ 抓包模板路径刷新 stime 并重签；遇 `E00001` 自动回退原签名重发一次。不改、不删任何现有逻辑。
+- 注意：手动 `"&".join(query)` 拼 URL 会破坏 token 编码，应始终用 `requests.post(params=...)` 自动编码。

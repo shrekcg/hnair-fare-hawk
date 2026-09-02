@@ -40,6 +40,7 @@ DEFAULT_CONFIG = {
     "normal_curl": "",
     "plus_curl": "",
     "proxy": "",
+    "sign_refresh": False,
 }
 DEFAULT_TASKS = {"tasks": []}
 DEFAULT_STATE = {"price_alerts": {}, "token_alert": {"last_ts": 0}}
@@ -212,6 +213,7 @@ def load_config() -> Dict[str, Any]:
     config.setdefault("normal_curl", DEFAULT_CONFIG["normal_curl"])
     config.setdefault("plus_curl", DEFAULT_CONFIG["plus_curl"])
     config.setdefault("proxy", DEFAULT_CONFIG["proxy"])
+    config.setdefault("sign_refresh", DEFAULT_CONFIG["sign_refresh"])
 
     if not isinstance(config["monitor_window"], dict):
         config["monitor_window"] = dict(DEFAULT_CONFIG["monitor_window"])

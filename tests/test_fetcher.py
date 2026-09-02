@@ -173,6 +173,85 @@ def test_fetch_price_status_network_and_parse(monkeypatch):
     assert fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")[0] == "parse"
 
 
+def test_make_hnair_sign_matches_official_spec():
+    """官方算法（HMAC-SHA1，hna 头 + query + payload 标量 + certificateHash，key=hardCode）。"""
+    headers = {"hna-app": "APP", "hna-channel": "HTML5", "cookie": "masked"}
+    query = {"token": "TOKEN_X"}
+    payload = {
+        "common": {"stime": 1700000000000, "did": "DID1"},
+        "data": {"passenger": "ADT:1", "specialZone": "ffl"},
+    }
+    # 固定用例期望值，防止算法结构被无意改动
+    assert fetcher._make_hnair_sign(headers, query, payload) == "56960ABB701A9419FE3F9A6BFCB13B1F4EA607B3"
+
+
+def test_build_profile_sign_refresh_updates_stime_and_sign(tmp_path, monkeypatch):
+    command = """curl --url 'https://example.test/ffl/airLowFareSearch?token=masked&hnairSign=valid-sign' \\
+  -H 'appver: 10.17.2' \\
+  -H 'content-type: application/json' \\
+  -b 'session=masked' \\
+  --data-raw '{"common": {"stime": 123}, "data": {"originDestinations": [{"origin": "AAA", "destination": "BBB", "departureDate": "2026-01-01"}], "specialZone": "ffl"}}'
+"""
+    (tmp_path / "config.json").write_text(
+        json.dumps({"plus_curl": command, "sign_refresh": True}), encoding="utf-8"
+    )
+    monkeypatch.setattr(fetcher, "BASE_DIR", tmp_path)
+
+    profile = fetcher._build_request_profile("SHE", "CAN", "2026-09-16", "plus")
+    stime = profile["payload"]["common"]["stime"]
+    assert isinstance(stime, int)
+    assert stime > 1700000000000  # 已刷新为近期毫秒时间戳，不再是 123
+    assert profile["query"]["hnairSign"] != "valid-sign"
+    assert profile["query"]["hnairSign"] == fetcher._make_hnair_sign(
+        profile["headers"], profile["query"], profile["payload"]
+    )
+
+
+def test_build_profile_sign_refresh_false_keeps_original(tmp_path, monkeypatch):
+    command = """curl --url 'https://example.test/ffl/airLowFareSearch?token=masked&hnairSign=valid-sign' \\
+  -H 'appver: 10.17.2' \\
+  -H 'content-type: application/json' \\
+  -b 'session=masked' \\
+  --data-raw '{"common": {"stime": 123}, "data": {"originDestinations": [{"origin": "AAA", "destination": "BBB", "departureDate": "2026-01-01"}], "specialZone": "ffl"}}'
+"""
+    (tmp_path / "config.json").write_text(
+        json.dumps({"plus_curl": command, "sign_refresh": True}), encoding="utf-8"
+    )
+    monkeypatch.setattr(fetcher, "BASE_DIR", tmp_path)
+
+    profile = fetcher._build_request_profile("SHE", "CAN", "2026-09-16", "plus", sign_refresh=False)
+    assert profile["query"]["hnairSign"] == "valid-sign"
+    assert profile["payload"]["common"]["stime"] == 123
+
+
+def test_fetch_price_status_falls_back_to_original_sign(monkeypatch):
+    """开启刷新后：校验失败自动回退原始抓包签名重发，抓取效果不劣化。"""
+    def fake_build(*args, **kwargs):
+        p = _mk_profile()
+        if kwargs.get("sign_refresh") is not False:
+            p["query"]["hnairSign"] = "fresh-sign"
+        return p
+
+    monkeypatch.setattr(fetcher, "_build_request_profile", fake_build)
+    monkeypatch.setattr(fetcher, "_sign_refresh_enabled", lambda: True)
+    monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
+
+    calls = {"n": 0}
+
+    def fake_post(*a, **k):
+        calls["n"] += 1
+        if k["params"]["hnairSign"] == "fresh-sign":
+            return _mk_response(200, {"success": False, "errorCode": "E00001", "errorMessage": "验签错误"})
+        return _mk_response(200, _itinerary_response())
+
+    monkeypatch.setattr(fetcher.requests, "post", fake_post)
+
+    status, fares = fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")
+    assert status == "ok"
+    assert fares[0]["flight"] == "HU7204"
+    assert calls["n"] == 2  # 先刷新版失败，再回退原始版成功
+
+
 def test_fetch_price_status_auth_raises_token_expired(monkeypatch):
     monkeypatch.setattr(fetcher, "_build_request_profile", lambda *a, **k: _mk_profile())
     monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
