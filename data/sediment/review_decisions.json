@@ -1,0 +1,182 @@
+{
+ "exported_at": "2026-09-02",
+ "count": 44,
+ "decisions": {
+  "8L9877|昆明|泉州": {
+   "decision": "both",
+   "note": ""
+  },
+  "8L9879|昆明|福州": {
+   "decision": "both",
+   "note": ""
+  },
+  "8L9989|昆明|泉州": {
+   "decision": "both",
+   "note": ""
+  },
+  "FU6683|福州|兰州": {
+   "decision": "both",
+   "note": "9.26止"
+  },
+  "FU6683|福州|长沙": {
+   "decision": "both",
+   "note": "9.19止"
+  },
+  "FU6714|呼和浩特|厦门": {
+   "decision": "2666",
+   "note": ""
+  },
+  "FU6739|福州|兰州": {
+   "decision": "both",
+   "note": ""
+  },
+  "FU6739|福州|太原": {
+   "decision": "both",
+   "note": ""
+  },
+  "FU6767|哈尔滨|三亚": {
+   "decision": "both",
+   "note": "10.12始"
+  },
+  "FU6767|哈尔滨|黄山": {
+   "decision": "both",
+   "note": "10.12始"
+  },
+  "GS6563|海口|遵义": {
+   "decision": "2666",
+   "note": "9.28~10.9"
+  },
+  "GS6604|呼伦贝尔|呼和浩特": {
+   "decision": "both",
+   "note": "9.19止"
+  },
+  "GS6604|呼伦贝尔|重庆": {
+   "decision": "both",
+   "note": "9.26止"
+  },
+  "GS6630|呼伦贝尔|乌兰浩特": {
+   "decision": "both",
+   "note": ""
+  },
+  "GS6630|呼伦贝尔|呼和浩特": {
+   "decision": "both",
+   "note": ""
+  },
+  "GS7815|天津|十堰": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GS7877|天津|庆阳": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8814|天津|南宁": {
+   "decision": "both",
+   "note": ""
+  },
+  "GX8816|淮安|海口": {
+   "decision": "both",
+   "note": ""
+  },
+  "GX8816|淮安|珠海": {
+   "decision": "both",
+   "note": ""
+  },
+  "GX8824|亳州|南宁": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8859|海口|南宁": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8859|海口|淮安": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8863|南宁|呼和浩特": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8871|海口|徐州": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8876|济南|张家界": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8876|济南|海口": {
+   "decision": "2666",
+   "note": "仅10.15"
+  },
+  "GX8919|济南|十堰": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8919|济南|南宁": {
+   "decision": "2666",
+   "note": ""
+  },
+  "GX8931|海口|泸州": {
+   "decision": "2666",
+   "note": ""
+  },
+  "HU7022|深圳|海口": {
+   "decision": "both",
+   "note": ""
+  },
+  "HU7698|太原|南京": {
+   "decision": "2666",
+   "note": ""
+  },
+  "HU7701|北京|深圳": {
+   "decision": "both",
+   "note": ""
+  },
+  "HU7746|徐州|深圳": {
+   "decision": "both",
+   "note": ""
+  },
+  "HU7855|乌鲁木齐|呼和浩特": {
+   "decision": "2666",
+   "note": "10.8止"
+  },
+  "JD5221|北京|二连浩特": {
+   "decision": "2666",
+   "note": ""
+  },
+  "JD5763|海口|桂林": {
+   "decision": "2666",
+   "note": "9.26止"
+  },
+  "JD5859|丽江|武汉": {
+   "decision": "2666",
+   "note": ""
+  },
+  "PN6239|重庆|丽江": {
+   "decision": "both",
+   "note": ""
+  },
+  "PN6269|重庆|乌鲁木齐": {
+   "decision": "2666",
+   "note": ""
+  },
+  "PN6447|贵阳|合肥": {
+   "decision": "2666",
+   "note": ""
+  },
+  "PN6485|重庆|泉州": {
+   "decision": "both",
+   "note": ""
+  },
+  "Y87531|深圳|杭州": {
+   "decision": "both",
+   "note": ""
+  },
+  "Y87531|深圳|长春": {
+   "decision": "both",
+   "note": ""
+  }
+ }
+}

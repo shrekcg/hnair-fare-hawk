@@ -252,7 +252,7 @@ def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]],
 def main() -> int:
     csv_flights = load_csv(CSV_DEFAULT)
     hna_files = {name: load_html(HNA666_DIR / name) for name in HNA666_FILES}
-    records = build(csv_flights, hna_files)
+    records = build(csv_flights, hna_files, decisions=load_decisions())
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / "flights_normalized.json"
     payload = {

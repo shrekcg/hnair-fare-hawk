@@ -9173,8 +9173,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -9342,8 +9342,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -12198,8 +12198,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -18940,8 +18940,8 @@
     "2666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "9.26止",
    "source": "both",
    "raw_csv_lines": [
@@ -19009,8 +19009,8 @@
     "2666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "9.19止",
    "source": "both",
    "raw_csv_lines": [
@@ -19373,9 +19373,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -20150,8 +20150,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -20214,8 +20214,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -20859,8 +20859,8 @@
     "2666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "10.12始",
    "source": "both",
    "raw_csv_lines": [
@@ -20923,8 +20923,8 @@
     "2666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "10.12始",
    "source": "both",
    "raw_csv_lines": [
@@ -25874,9 +25874,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": "9.28~10.9",
    "source": "both",
    "raw_csv_lines": [
@@ -27577,8 +27577,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "9.19止",
    "source": "both",
    "raw_csv_lines": [
@@ -27649,8 +27649,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": "9.26止",
    "source": "both",
    "raw_csv_lines": [
@@ -28089,8 +28089,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -28164,8 +28164,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -42444,9 +42444,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -44740,9 +44740,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -48184,8 +48184,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -48248,8 +48248,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -48312,8 +48312,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -49050,9 +49050,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -50596,9 +50596,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -50663,9 +50663,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -50785,9 +50785,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -51353,9 +51353,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -51820,9 +51820,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -51906,9 +51906,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": "仅10.15",
    "source": "both",
    "raw_csv_lines": [
@@ -53161,9 +53161,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -53228,9 +53228,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -53746,9 +53746,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -57659,8 +57659,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -78513,9 +78513,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -78598,8 +78598,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -80197,8 +80197,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -83984,9 +83984,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": "10.8止",
    "source": "both",
    "raw_csv_lines": [
@@ -89845,9 +89845,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -98025,9 +98025,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": "9.26止",
    "source": "both",
    "raw_csv_lines": [
@@ -98786,9 +98786,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -101824,8 +101824,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -103054,9 +103054,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -108394,9 +108394,9 @@
    "hna_products": [
     "2666"
    ],
-   "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product": "2666",
+   "product_conflict": false,
+   "review_decision": "2666",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -109562,8 +109562,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -117896,8 +117896,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
@@ -117968,8 +117968,8 @@
     "666"
    ],
    "product": "666/2666",
-   "product_conflict": true,
-   "review_decision": null,
+   "product_conflict": false,
+   "review_decision": "both",
    "notes": null,
    "source": "both",
    "raw_csv_lines": [
