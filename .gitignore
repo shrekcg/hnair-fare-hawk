@@ -44,3 +44,4 @@ web/dist/
 # 第三方参考资料（各自带 .git，可独立 git pull 更新）
 参考资料/
 data/sediment/reports/compare_*.json
+data/sediment/snapshots/

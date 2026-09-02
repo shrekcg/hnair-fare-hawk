@@ -1,0 +1,27 @@
+{
+ "versions": [
+  {
+   "version": 1,
+   "updated_at": "2026-09-02 23:53:52",
+   "upstream_commits": {
+    "sxfroute": "bda3f22",
+    "hna666": "ee594a6"
+   },
+   "changed": false,
+   "force": true,
+   "count": 1733,
+   "product_dist": {
+    "666/2666": 1207,
+    "2666": 526
+   },
+   "source_dist": {
+    "both": 1455,
+    "hna": 213,
+    "csv": 65
+   },
+   "product_conflict": 0,
+   "new_decisions": {},
+   "snapshot": "data/sediment/snapshots/flights_normalized_20260902T235351.json"
+  }
+ ]
+}
