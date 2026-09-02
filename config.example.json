@@ -22,5 +22,6 @@
     "refresh_sec": 120
   },
   "normal_curl": "",
-  "plus_curl": ""
+  "plus_curl": "",
+  "proxy": ""
 }

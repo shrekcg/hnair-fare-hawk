@@ -28,6 +28,7 @@ class AlertStateManager:
         return {
             "price_alerts": {},
             "token_alert": {"last_ts": 0},
+            "task_backoff": {},
         }
 
     def _ensure_file(self) -> None:
@@ -124,3 +125,45 @@ class AlertStateManager:
         data = self._load_state()
         data.setdefault("token_alert", {})["last_ts"] = now
         self._save_state(data)
+
+    # ---------- 任务级失败退避（持久化到 runtime_state.json） ----------
+
+    @staticmethod
+    def _backoff_delay_seconds(fail_count: int, base_minutes: int = 5, max_minutes: int = 60) -> int:
+        """指数退避：5min → 10 → 20 → 40 → 60（封顶 60min）。"""
+        delay = base_minutes * (2 ** max(0, fail_count - 1))
+        return min(delay, max_minutes) * 60
+
+    def get_task_backoff(self, task_id: str) -> tuple[int, float]:
+        """返回 (连续失败次数, next_ok_ts)。"""
+        data = self._load_state()
+        info = (data.get("task_backoff") or {}).get(task_id) or {}
+        try:
+            fail_count = int(info.get("fail_count", 0))
+        except (TypeError, ValueError):
+            fail_count = 0
+        try:
+            next_ok_ts = float(info.get("next_ok_ts", 0))
+        except (TypeError, ValueError):
+            next_ok_ts = 0
+        return fail_count, next_ok_ts
+
+    def mark_task_failure(self, task_id: str) -> None:
+        """记录一次失败并延长该任务退避窗口。"""
+        fail_count, _ = self.get_task_backoff(task_id)
+        fail_count += 1
+        delay = self._backoff_delay_seconds(fail_count)
+        data = self._load_state()
+        data.setdefault("task_backoff", {})[task_id] = {
+            "fail_count": fail_count,
+            "next_ok_ts": time.time() + delay,
+        }
+        self._save_state(data)
+
+    def mark_task_success(self, task_id: str) -> None:
+        """任务成功后清零失败计数。"""
+        data = self._load_state()
+        backoff = data.setdefault("task_backoff", {})
+        if task_id in backoff:
+            backoff.pop(task_id)
+            self._save_state(data)

@@ -766,106 +766,151 @@ def parse_curl_command(curl_cmd: str) -> Dict[str, Any]:
 # ==================== 对外接口 ====================
 
 
-def real_fetch_price(from_code: str, to_code: str, date: str, fare_type: str = "normal") -> List[Dict[str, Any]]:
-    """
-    抓取价格列表。
-
-    返回格式：
-    [{"flight": "HU1234", "price": 1360}, ...]
-
-    异常规则：
-    - HTTP 401 或关键字段缺失：抛 TokenExpiredError
-    - 其他错误：返回 []
-    """
+def _load_proxy() -> str:
+    """从 config.json 读取可选 HTTP(S) 代理地址；未配置返回空串。"""
     try:
-        profile = _build_request_profile(
-            from_code=from_code,
-            to_code=to_code,
-            date=date,
-            fare_type=fare_type,
-        )
-        if not profile:
-            return []
+        cfg = _read_json(BASE_DIR / "config.json")
+    except Exception:
+        return ""
+    if not isinstance(cfg, dict):
+        return ""
+    return str(cfg.get("proxy", "")).strip()
 
-        query = dict(profile.get("query", {}))
-        headers = dict(profile.get("headers", {}))
-        payload = dict(profile.get("payload", {}))
-        request_url = str(profile.get("url", REQUEST_URL))
 
-        # 完整浏览器请求保留其有效签名；静态兜底模板才尝试动态生成。
-        if not profile.get("preserve_captured_sign"):
-            query["hnairSign"] = _make_hnair_sign(headers=headers, query=query, payload=payload)
+def _request_proxies(proxy: str) -> Dict[str, str] | None:
+    if not proxy:
+        return None
+    return {"http": proxy, "https": proxy}
 
-        # 若仍是占位符，直接按"接口凭证无效"处理，触发阻断告警。
-        if _is_placeholder(query.get("token", "")) or _is_placeholder(headers.get("cookie", "")):
-            raise TokenExpiredError("检测到 token/sign/cookie 仍为占位符，尚未配置真实凭证")
 
+def fetch_price_status(
+    from_code: str,
+    to_code: str,
+    date: str,
+    fare_type: str = "normal",
+) -> "tuple[str, List[Dict[str, Any]]]":
+    """
+    带状态分类的抓价接口。
+
+    返回 (status, fares)：
+    - "ok"      ：正常返回，fares 为可购航班列表；
+    - "network" ：网络不通 / 网关错误 / 429 限流 / 非 200；
+    - "parse"   ：响应不是预期 JSON 结构；
+    - "empty"   ：200 且解析成功，但没有任何可购航班。
+
+    鉴权失败（401/403/验签错误/占位符）一律抛 TokenExpiredError。
+    """
+    profile = _build_request_profile(
+        from_code=from_code,
+        to_code=to_code,
+        date=date,
+        fare_type=fare_type,
+    )
+    if not profile:
+        return "network", []
+
+    query = dict(profile.get("query", {}))
+    headers = dict(profile.get("headers", {}))
+    payload = dict(profile.get("payload", {}))
+    request_url = str(profile.get("url", REQUEST_URL))
+
+    # 完整浏览器请求保留其有效签名；静态兜底模板才尝试动态生成。
+    if not profile.get("preserve_captured_sign"):
+        query["hnairSign"] = _make_hnair_sign(headers=headers, query=query, payload=payload)
+
+    # 若仍是占位符，直接按"接口凭证无效"处理，触发阻断告警。
+    if _is_placeholder(query.get("token", "")) or _is_placeholder(headers.get("cookie", "")):
+        raise TokenExpiredError("检测到 token/sign/cookie 仍为占位符，尚未配置真实凭证")
+
+    proxies = _request_proxies(_load_proxy())
+
+    try:
         response = requests.post(
             request_url,
             params=query,
             headers=headers,
             json=payload,
             timeout=20,
+            proxies=proxies,
         )
-
-        if response.status_code in (401, 403):
-            raise TokenExpiredError(f"HTTP {response.status_code}: token/sign/cookie 失效或被风控")
-
-        # 高频限流或网关错误多为临时问题，不判定为凭证过期，直接跳过本次。
-        if response.status_code in (429, 500, 502, 503, 504):
-            return []
-
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-        if not isinstance(data, dict):
-            return []
-
-        auth_failed, auth_hint = _is_auth_failure(response.status_code, data)
-        if auth_failed:
-            raise TokenExpiredError(f"接口鉴权失败：{auth_hint}" if auth_hint else "接口鉴权失败")
-
-        itineraries = _extract_itineraries(data)
-        if not itineraries:
-            return []
-
-        results: List[Dict[str, Any]] = []
-
-        for itinerary in itineraries:
-            if not isinstance(itinerary, dict):
-                continue
-
-            price = _extract_itinerary_price(itinerary)
-            if price is None:
-                continue
-
-            segments = (
-                itinerary.get("flightSegments")
-                or itinerary.get("segments")
-                or itinerary.get("segmentList")
-            )
-            segment0: Dict[str, Any] = {}
-            if isinstance(segments, list) and segments and isinstance(segments[0], dict):
-                segment0 = segments[0]
-            flight_no = _format_flight_code(segment0)
-
-            results.append(
-                {
-                    "flight": str(flight_no),
-                    "price": price,
-                }
-            )
-
-        return results
-
-    except TokenExpiredError:
-        raise
     except requests.RequestException:
-        return []
+        return "network", []
+
+    if response.status_code in (401, 403):
+        raise TokenExpiredError(f"HTTP {response.status_code}: token/sign/cookie 失效或被风控")
+
+    # 高频限流或网关错误多为临时问题，不判定为凭证过期，直接跳过本次。
+    if response.status_code in (429, 500, 502, 503, 504):
+        return "network", []
+
+    if response.status_code != 200:
+        return "network", []
+
+    try:
+        data = response.json()
     except ValueError as exc:
         # 返回体不是 JSON，通常意味着接口结构改变或网关返回异常页。
         raise TokenExpiredError(f"接口返回格式异常（非 JSON）：{exc}") from exc
-    except Exception:
+
+    if not isinstance(data, dict):
+        return "parse", []
+
+    auth_failed, auth_hint = _is_auth_failure(response.status_code, data)
+    if auth_failed:
+        raise TokenExpiredError(f"接口鉴权失败：{auth_hint}" if auth_hint else "接口鉴权失败")
+
+    itineraries = _extract_itineraries(data)
+    if not itineraries:
+        return "empty", []
+
+    results: List[Dict[str, Any]] = []
+
+    for itinerary in itineraries:
+        if not isinstance(itinerary, dict):
+            continue
+
+        price = _extract_itinerary_price(itinerary)
+        if price is None:
+            continue
+
+        segments = (
+            itinerary.get("flightSegments")
+            or itinerary.get("segments")
+            or itinerary.get("segmentList")
+        )
+        segment0: Dict[str, Any] = {}
+        if isinstance(segments, list) and segments and isinstance(segments[0], dict):
+            segment0 = segments[0]
+        flight_no = _format_flight_code(segment0)
+
+        results.append(
+            {
+                "flight": str(flight_no),
+                "price": price,
+            }
+        )
+
+    return "ok", results
+
+
+def real_fetch_price(from_code: str, to_code: str, date: str, fare_type: str = "normal") -> List[Dict[str, Any]]:
+    """
+    抓取价格列表（兼容旧接口，返回格式不变）。
+
+    返回格式：
+    [{"flight": "HU1234", "price": 1360}, ...]
+
+    异常规则：
+    - 凭证失效/验签失败/结构异常：抛 TokenExpiredError
+    - 其他错误：返回 []
+    """
+    status, fares = fetch_price_status(
+        from_code=from_code,
+        to_code=to_code,
+        date=date,
+        fare_type=fare_type,
+    )
+    if status != "ok":
         return []
+    return fares
 

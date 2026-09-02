@@ -16,6 +16,7 @@ CONFIG_PATH = BASE_DIR / "config.json"
 TASKS_PATH = BASE_DIR / "tasks.json"
 LOG_PATH = BASE_DIR / "run_log.txt"
 STATE_PATH = BASE_DIR / "runtime_state.json"
+HISTORY_PATH = BASE_DIR / "price_history.jsonl"
 
 DEFAULT_CONFIG = {
     "status": "stopped",
@@ -37,6 +38,7 @@ DEFAULT_CONFIG = {
     },
     "normal_curl": "",
     "plus_curl": "",
+    "proxy": "",
 }
 DEFAULT_TASKS = {"tasks": []}
 DEFAULT_STATE = {"price_alerts": {}, "token_alert": {"last_ts": 0}}
@@ -134,6 +136,35 @@ def delete_task(task_id: str) -> None:
     _write_json(TASKS_PATH, tasks)
 
 
+def set_task_enabled(task_id: str, enabled: bool) -> None:
+    """启用或停用单个任务（daemon 会过滤 enabled=False 的任务）。"""
+    tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
+    for task in tasks.get("tasks", []):
+        if task.get("id") == task_id:
+            task["enabled"] = bool(enabled)
+    _write_json(TASKS_PATH, tasks)
+
+
+def save_proxy(proxy: str) -> None:
+    config = load_config()
+    config["proxy"] = str(proxy or "").strip()
+    _write_json(CONFIG_PATH, config)
+
+
+def read_price_history(line_count: int = 50) -> List[Dict[str, Any]]:
+    """读取最近 N 条价格历史记录（JSONL）。"""
+    if not HISTORY_PATH.exists():
+        return []
+    lines = HISTORY_PATH.read_text(encoding="utf-8").strip().splitlines()
+    records: List[Dict[str, Any]] = []
+    for line in lines[-line_count:]:
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return records
+
+
 def set_status(status: str) -> None:
     config = load_config()
     config["status"] = status
@@ -154,6 +185,7 @@ def load_config() -> Dict[str, Any]:
     config.setdefault("credential_auto", dict(DEFAULT_CONFIG["credential_auto"]))
     config.setdefault("normal_curl", DEFAULT_CONFIG["normal_curl"])
     config.setdefault("plus_curl", DEFAULT_CONFIG["plus_curl"])
+    config.setdefault("proxy", DEFAULT_CONFIG["proxy"])
 
     if not isinstance(config["monitor_window"], dict):
         config["monitor_window"] = dict(DEFAULT_CONFIG["monitor_window"])
@@ -303,6 +335,22 @@ def main() -> None:
             st.rerun()
 
         st.divider()
+        with st.expander("高级设置", expanded=False):
+            proxy_value = st.text_input(
+                "HTTP(S) 代理（可选）",
+                value=str(config.get("proxy", "")),
+                placeholder="例如 http://127.0.0.1:7890",
+                help="所有海航抓价请求都会走该代理；留空表示直连。",
+            )
+            if st.button("保存代理"):
+                save_proxy(proxy_value)
+                st.success("代理设置已保存。")
+            st.caption(
+                "安全提示：远端自动凭证拉取（credential_auto.url）默认关闭，"
+                "仅在完全信任的配置下启用，避免把凭证发送到恶意地址。"
+            )
+
+        st.divider()
         st.metric("当前状态", config.get("status", "stopped"))
 
     st.subheader("添加监控任务")
@@ -374,8 +422,9 @@ def main() -> None:
         st.info("暂无任务，请先添加。")
 
     if tasks:
-        selected_index = st.number_input("选择要删除的任务序号", min_value=1, max_value=len(tasks), value=1, step=1)
+        selected_index = st.number_input("选择要操作的任务序号", min_value=1, max_value=len(tasks), value=1, step=1)
         selected_task = tasks[selected_index - 1]
+        state_label = "启用" if selected_task.get("enabled", True) else "停用"
         st.caption(
             "当前选中："
             + f"第 {selected_index} 条 | {selected_task.get('date', '')} | "
@@ -383,9 +432,19 @@ def main() -> None:
             + f"{code_to_city_label(str(selected_task.get('to_code', '')))} | "
             + ("PLUS专享" if str(selected_task.get("fare_type", "normal")) == "plus" else "普通票价")
             + f" | <= {selected_task.get('target_price', 199)}"
+            + f" | 当前{state_label}"
         )
-        if st.button("删除选中任务"):
-            delete_task(tasks[selected_index - 1]["id"])
+        c_ena, c_dis, c_del = st.columns(3)
+        if c_ena.button("启用该任务"):
+            set_task_enabled(selected_task["id"], True)
+            st.success("任务已启用。")
+            st.rerun()
+        if c_dis.button("停用该任务"):
+            set_task_enabled(selected_task["id"], False)
+            st.warning("任务已停用（daemon 不再查询）。")
+            st.rerun()
+        if c_del.button("删除选中任务"):
+            delete_task(selected_task["id"])
             st.success("任务已删除。")
             st.rerun()
 
@@ -399,6 +458,26 @@ def main() -> None:
         set_status("stopped")
         st.warning("已写入 stopped 状态。")
         st.rerun()
+
+    st.subheader("价格历史（最近 50 条）")
+    records = read_price_history(50)
+    if records:
+        display_rows = []
+        for r in records:
+            display_rows.append(
+                {
+                    "时间": r.get("ts", ""),
+                    "日期": r.get("date", ""),
+                    "航线": f"{code_to_city_label(str(r.get('from', '')))} -> "
+                    f"{code_to_city_label(str(r.get('to', '')))}",
+                    "类型": "PLUS专享" if r.get("fare_type") == "plus" else "普通票价",
+                    "航班": r.get("flight", ""),
+                    "票价(元)": r.get("price", ""),
+                }
+            )
+        st.dataframe(display_rows, width=800, hide_index=True)
+    else:
+        st.info("暂无价格历史（daemon 抓到价格后才会写入）。")
 
     st.subheader("运行日志（最近 20 行）")
     if st.button("刷新日志"):

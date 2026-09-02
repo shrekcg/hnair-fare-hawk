@@ -29,3 +29,10 @@ Thumbs.db
 
 # 本地私有（请求文件等敏感内容）
 .private/
+
+# PID 文件
+*.pid
+# Web 输出
+web_stdout.log
+# 价格历史
+price_history.jsonl

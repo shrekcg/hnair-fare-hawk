@@ -111,3 +111,79 @@ def test_real_fetch_price_parses_current_response(monkeypatch):
             "price": 199,
         }
     ]
+
+
+def _mk_profile(url="https://example.test/ffl/airLowFareSearch"):
+    return {
+        "url": url,
+        "query": {"token": "masked", "hnairSign": "valid-sign"},
+        "headers": {"cookie": "session=masked"},
+        "payload": {"data": {}},
+        "preserve_captured_sign": True,
+    }
+
+
+def _mk_response(status_code=200, data=None):
+    class Response:
+        pass
+
+    resp = Response()
+    resp.status_code = status_code
+    resp._data = data if data is not None else {"success": True, "data": {"originDestinations": []}}
+
+    @staticmethod
+    def json():
+        return resp._data
+
+    resp.json = json
+    return resp
+
+
+def test_fetch_price_status_ok_and_empty(monkeypatch):
+    monkeypatch.setattr(fetcher, "_build_request_profile", lambda *a, **k: _mk_profile())
+    monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
+
+    monkeypatch.setattr(
+        fetcher.requests,
+        "post",
+        lambda *a, **k: _mk_response(200, _itinerary_response()),
+    )
+    status, fares = fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")
+    assert status == "ok"
+    assert fares[0]["flight"] == "HU7204"
+
+    monkeypatch.setattr(
+        fetcher.requests,
+        "post",
+        lambda *a, **k: _mk_response(200, {"success": True, "data": {"originDestinations": []}}),
+    )
+    status, fares = fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")
+    assert status == "empty"
+    assert fares == []
+
+
+def test_fetch_price_status_network_and_parse(monkeypatch):
+    monkeypatch.setattr(fetcher, "_build_request_profile", lambda *a, **k: _mk_profile())
+    monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
+
+    monkeypatch.setattr(fetcher.requests, "post", lambda *a, **k: _mk_response(429, {}))
+    assert fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")[0] == "network"
+
+    monkeypatch.setattr(fetcher.requests, "post", lambda *a, **k: _mk_response(200, [1, 2, 3]))
+    assert fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")[0] == "parse"
+
+
+def test_fetch_price_status_auth_raises_token_expired(monkeypatch):
+    monkeypatch.setattr(fetcher, "_build_request_profile", lambda *a, **k: _mk_profile())
+    monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
+
+    monkeypatch.setattr(
+        fetcher.requests,
+        "post",
+        lambda *a, **k: _mk_response(200, {"success": False, "errorCode": "E00001", "errorMessage": "验签错误"}),
+    )
+    try:
+        fetcher.fetch_price_status("SHE", "CAN", "2026-09-16", "plus")
+        raise AssertionError("should have raised")
+    except fetcher.TokenExpiredError:
+        pass

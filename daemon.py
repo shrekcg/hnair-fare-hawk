@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import time
 from datetime import datetime, time as dt_time
 from typing import Any, Dict, List
 
 import portalocker
 
-from backend.fetcher import TokenExpiredError, real_fetch_price
+from backend.fetcher import TokenExpiredError, fetch_price_status
 from backend.notifier import send_price_alert, send_token_expired_alert
 from backend.scheduler import get_next_interval_seconds
 from backend.state import AlertStateManager
@@ -21,6 +22,12 @@ CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 TASKS_PATH = os.path.join(BASE_DIR, "tasks.json")
 LOG_PATH = os.path.join(BASE_DIR, "run_log.txt")
 STATE_PATH = os.path.join(BASE_DIR, "runtime_state.json")
+HISTORY_PATH = os.path.join(BASE_DIR, "price_history.jsonl")
+
+MAX_LOG_BYTES = 1 * 1024 * 1024  # 单份运行日志最多 1MB，超出轮转
+MAX_HISTORY_BYTES = 5 * 1024 * 1024  # 价格历史最多 5MB，超出轮转保留 1 份
+TASK_STAGGER_MIN = 10  # 任务间错峰（秒）
+TASK_STAGGER_MAX = 30
 
 
 DEFAULT_CONFIG = {
@@ -71,12 +78,33 @@ def read_json(path: str, default_data: Any) -> Any:
 
 
 def append_log(message: str) -> None:
-    """追加写运行日志。"""
+    """追加写运行日志（超 1MB 自动轮转，保留 1 份旧档）。"""
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{ts}] {message}\n"
 
     ensure_file(LOG_PATH, "")
+    # 单写者（daemon）顺序执行：写前检查体积，超出则轮转。
+    try:
+        if os.path.getsize(LOG_PATH) >= MAX_LOG_BYTES:
+            os.replace(LOG_PATH, LOG_PATH + ".1")
+    except OSError:
+        pass
+
     with portalocker.Lock(LOG_PATH, mode="a", timeout=5, encoding="utf-8") as f:
+        f.write(line)
+        f.flush()
+
+
+def append_history(record: Dict[str, Any]) -> None:
+    """追加写价格历史（JSONL），超 5MB 轮转保留 1 份旧档。"""
+    try:
+        if os.path.exists(HISTORY_PATH) and os.path.getsize(HISTORY_PATH) >= MAX_HISTORY_BYTES:
+            os.replace(HISTORY_PATH, HISTORY_PATH + ".1")
+    except OSError:
+        pass
+
+    line = json.dumps(record, ensure_ascii=False) + "\n"
+    with portalocker.Lock(HISTORY_PATH, mode="a", timeout=5, encoding="utf-8") as f:
         f.write(line)
         f.flush()
 
@@ -177,21 +205,27 @@ def _is_in_monitor_window(now_time: dt_time, start_hhmm: str, end_hhmm: str) -> 
     return now_time >= start_t or now_time < end_t
 
 
-def run_one_round(state_mgr: AlertStateManager) -> None:
-    """执行一轮抓价与提醒。"""
+def run_one_round(state_mgr: AlertStateManager) -> bool:
+    """
+    执行一轮抓价与提醒。
+
+    返回：本轮是否取到至少一条价格（用于自适应轮询频率）。
+    """
     config = load_config()
     send_keys = config.get("send_keys", [])
-    tasks = load_tasks()
+    all_tasks = load_tasks()
+    tasks = [task for task in all_tasks if task.get("enabled", True)]
     if not tasks:
         append_log("当前没有监控任务。")
-        return
+        return False
 
-    append_log(f"开始执行新一轮监控，共 {len(tasks)} 条任务。")
+    append_log(f"开始执行新一轮监控，共 {len(all_tasks)} 条任务（启用 {len(tasks)} 条）。")
     state_mgr.prune_old()
 
-    for task in tasks:
-        if not task.get("enabled", True):
-            continue
+    saw_prices = False
+
+    for index, task in enumerate(tasks):
+        task_id = str(task.get("id", ""))
 
         date = str(task.get("date", "")).strip()
         from_code = str(task.get("from_code", "")).strip().upper()
@@ -210,20 +244,34 @@ def run_one_round(state_mgr: AlertStateManager) -> None:
             append_log(f"任务参数不完整，已跳过：{task}")
             continue
 
+        # 凭证失败退避：仍在退避窗口内的任务直接跳过本轮。
+        _, next_ok_ts = state_mgr.get_task_backoff(task_id)
+        if next_ok_ts > time.time():
+            remain = int(next_ok_ts - time.time())
+            append_log(f"任务退避中（剩余约 {remain} 秒），跳过本轮。")
+            continue
+
+        # 任务级错峰：>1 条任务时，任务之间随机等待，避免连发。
+        if index > 0:
+            stagger = random.randint(TASK_STAGGER_MIN, TASK_STAGGER_MAX)
+            append_log(f"任务间错峰 {stagger} 秒…")
+            time.sleep(stagger)
+
         from_city = code_to_city_only(from_code)
         to_city = code_to_city_only(to_code)
         append_log(f"查询任务：{date} | {from_city}({from_code})->{to_city}({to_code}) | {fare_label} | 目标<= {target_price}")
 
         try:
-            fares = real_fetch_price(
+            status, fares = fetch_price_status(
                 from_code=from_code,
                 to_code=to_code,
                 date=date,
                 fare_type=fare_type,
             )
         except TokenExpiredError as exc:
+            state_mgr.mark_task_failure(task_id)
             reason = str(exc)
-            append_log(f"[阻断] 凭证疑似过期：{reason}")
+            append_log(f"[鉴权失败] {reason}（该任务进入退避）")
 
             if state_mgr.should_send_token_alert():
                 send_token_expired_alert(send_keys, reason)
@@ -231,11 +279,21 @@ def run_one_round(state_mgr: AlertStateManager) -> None:
                 append_log("已发送 Token 过期高优先级告警。")
             else:
                 append_log("Token 告警处于冷却期，跳过重复推送。")
-            return
-
-        if not fares:
-            append_log("未获取到航班价格或接口返回为空。")
             continue
+
+        if status == "network":
+            append_log("请求失败（网络不通 / 网关错误 / 429 限流），本轮跳过。")
+            continue
+        if status == "parse":
+            append_log("接口返回结构异常（非 JSON 或字段变化），本轮跳过。")
+            continue
+        if not fares:
+            append_log("接口正常返回但无可用航班（无票或价格不可购）。")
+            continue
+
+        # 取到价格：任务恢复，清零退避计数。
+        state_mgr.mark_task_success(task_id)
+        saw_prices = True
 
         pushed_count = 0
         for item in fares:
@@ -245,6 +303,18 @@ def run_one_round(state_mgr: AlertStateManager) -> None:
                 continue
 
             append_log(f"{flight} | {price} 元")
+            append_history(
+                {
+                    "ts": datetime.now().isoformat(timespec="seconds"),
+                    "task_id": task_id,
+                    "date": date,
+                    "from": from_code,
+                    "to": to_code,
+                    "fare_type": fare_type,
+                    "flight": flight,
+                    "price": price,
+                }
+            )
             if price <= target_price:
                 fingerprint = _build_fingerprint(task, flight, price)
                 if state_mgr.should_alert(fingerprint):
@@ -254,6 +324,8 @@ def run_one_round(state_mgr: AlertStateManager) -> None:
 
         if pushed_count > 0:
             append_log(f"已发送 {pushed_count} 条低价提醒。")
+
+    return saw_prices
 
 
 def main() -> None:
@@ -303,12 +375,20 @@ def main() -> None:
             append_log(f"进入监控时段（{start_hhmm}-{end_hhmm}），开始执行监控。")
         monitor_window_active = True
 
-        run_one_round(state_mgr)
+        saw_prices = run_one_round(state_mgr)
 
-        wait_seconds = get_next_interval_seconds(
-            polling=config.get("polling", DEFAULT_CONFIG["polling"])
-        )
-        append_log(f"本轮结束，约 {wait_seconds} 秒后进行下一次查询。")
+        polling_cfg = config.get("polling", DEFAULT_CONFIG["polling"]) or {}
+        day_min = int(polling_cfg.get("day_min_sec", 90))
+        night_max = int(polling_cfg.get("night_max_sec", 600))
+        wait_seconds = get_next_interval_seconds(polling=polling_cfg)
+        if saw_prices:
+            # 有价：加密轮询，但不低于日间隔下限。
+            wait_seconds = max(int(wait_seconds / 2), day_min)
+            append_log(f"本轮有价格数据，下一轮间隔缩短至 {wait_seconds} 秒。")
+        else:
+            # 无价：拉长轮询，减少无效请求，封顶夜间上限的 2 倍。
+            wait_seconds = min(int(wait_seconds * 1.5), night_max * 2)
+            append_log(f"本轮无价格数据，下一轮间隔拉长至 {wait_seconds} 秒。")
         sleep_with_status_check(wait_seconds, check_interval)
 
 
