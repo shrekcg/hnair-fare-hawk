@@ -40,3 +40,7 @@ price_history.jsonl
 # 前端（web/）构建产物与依赖，start_all.sh 会自动 pnpm build
 web/node_modules/
 web/dist/
+
+# 第三方参考资料（各自带 .git，可独立 git pull 更新）
+参考资料/
+data/sediment/reports/compare_*.json
