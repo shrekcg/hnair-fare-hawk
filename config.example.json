@@ -1,0 +1,26 @@
+{
+  "status": "stopped",
+  "send_keys": [],
+  "polling": {
+    "day_min_sec": 90,
+    "day_max_sec": 240,
+    "night_min_sec": 300,
+    "night_max_sec": 600
+  },
+  "runtime": {
+    "check_status_interval_sec": 3
+  },
+  "monitor_window": {
+    "start": "07:00",
+    "end": "23:00"
+  },
+  "credential_auto": {
+    "enabled": false,
+    "file_path": "",
+    "url": "",
+    "auth": "",
+    "refresh_sec": 120
+  },
+  "normal_curl": "",
+  "plus_curl": ""
+}

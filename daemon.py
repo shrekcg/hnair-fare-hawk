@@ -1,0 +1,316 @@
+"""后端常驻进程入口。"""
+
+from __future__ import annotations
+
+import json
+import os
+import time
+from datetime import datetime, time as dt_time
+from typing import Any, Dict, List
+
+import portalocker
+
+from backend.fetcher import TokenExpiredError, real_fetch_price
+from backend.notifier import send_price_alert, send_token_expired_alert
+from backend.scheduler import get_next_interval_seconds
+from backend.state import AlertStateManager
+from city_codes import code_to_city_only
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+TASKS_PATH = os.path.join(BASE_DIR, "tasks.json")
+LOG_PATH = os.path.join(BASE_DIR, "run_log.txt")
+STATE_PATH = os.path.join(BASE_DIR, "runtime_state.json")
+
+
+DEFAULT_CONFIG = {
+    "status": "stopped",
+    "send_keys": [],
+    "polling": {
+        "day_min_sec": 90,
+        "day_max_sec": 240,
+        "night_min_sec": 300,
+        "night_max_sec": 600,
+    },
+    "runtime": {"check_status_interval_sec": 3},
+    "monitor_window": {"start": "07:00", "end": "23:00"},
+    "alert_cooldown": {
+        "hours": 1,  # 价格提醒冷却时间（小时），默认1小时
+    },
+}
+
+DEFAULT_TASKS = {"tasks": []}
+
+
+def ensure_file(path: str, default_data: Any) -> None:
+    """若文件不存在则创建默认内容。"""
+    if os.path.exists(path):
+        return
+
+    if path.endswith(".json"):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(default_data, f, ensure_ascii=False, indent=2)
+    else:
+        with open(path, "w", encoding="utf-8"):
+            pass
+
+
+def read_json(path: str, default_data: Any) -> Any:
+    """带锁读取 JSON；读取失败时返回默认值。"""
+    ensure_file(path, default_data)
+
+    try:
+        with portalocker.Lock(path, mode="a+", timeout=5, encoding="utf-8") as f:
+            f.seek(0)
+            text = f.read().strip()
+            if not text:
+                return default_data
+            return json.loads(text)
+    except Exception:
+        return default_data
+
+
+def append_log(message: str) -> None:
+    """追加写运行日志。"""
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{ts}] {message}\n"
+
+    ensure_file(LOG_PATH, "")
+    with portalocker.Lock(LOG_PATH, mode="a", timeout=5, encoding="utf-8") as f:
+        f.write(line)
+        f.flush()
+
+
+def load_config() -> Dict[str, Any]:
+    """读取配置并兜底关键字段。"""
+    config = read_json(CONFIG_PATH, DEFAULT_CONFIG)
+    if not isinstance(config, dict):
+        return DEFAULT_CONFIG.copy()
+
+    config.setdefault("status", "stopped")
+    config.setdefault("send_keys", [])
+    config.setdefault("polling", DEFAULT_CONFIG["polling"])
+    config.setdefault("runtime", DEFAULT_CONFIG["runtime"])
+    config.setdefault("monitor_window", DEFAULT_CONFIG["monitor_window"])
+
+    if not isinstance(config["send_keys"], list):
+        config["send_keys"] = []
+
+    if not isinstance(config["monitor_window"], dict):
+        config["monitor_window"] = dict(DEFAULT_CONFIG["monitor_window"])
+    else:
+        config["monitor_window"].setdefault("start", DEFAULT_CONFIG["monitor_window"]["start"])
+        config["monitor_window"].setdefault("end", DEFAULT_CONFIG["monitor_window"]["end"])
+    return config
+
+
+def load_tasks() -> List[Dict[str, Any]]:
+    """读取任务列表。"""
+    data = read_json(TASKS_PATH, DEFAULT_TASKS)
+    if not isinstance(data, dict):
+        return []
+
+    tasks = data.get("tasks", [])
+    if not isinstance(tasks, list):
+        return []
+
+    result: List[Dict[str, Any]] = []
+    for task in tasks:
+        if isinstance(task, dict):
+            result.append(task)
+    return result
+
+
+def sleep_with_status_check(seconds: int, check_interval: int) -> None:
+    """分段休眠，便于快速响应 stop。"""
+    elapsed = 0
+    while elapsed < seconds:
+        step = min(max(1, check_interval), seconds - elapsed)
+        time.sleep(step)
+        elapsed += step
+
+        cfg = load_config()
+        if str(cfg.get("status", "stopped")).lower() != "running":
+            append_log("检测到状态已停止，提前结束等待。")
+            return
+
+
+def _build_fingerprint(task: Dict[str, Any], flight: str, price: int) -> str:
+    """构建去重指纹。"""
+    return "|".join(
+        [
+            str(task.get("id", "")),
+            str(task.get("date", "")),
+            str(task.get("from_code", "")),
+            str(task.get("to_code", "")),
+            str(task.get("fare_type", "normal")),
+            str(flight),
+            str(price),
+        ]
+    )
+
+
+def _parse_hhmm(value: str, fallback: str) -> dt_time:
+    """解析 HH:MM，异常时回退 fallback。"""
+    for candidate in (str(value or "").strip(), fallback):
+        try:
+            return datetime.strptime(candidate, "%H:%M").time()
+        except ValueError:
+            continue
+    return dt_time(hour=7, minute=0)
+
+
+def _is_in_monitor_window(now_time: dt_time, start_hhmm: str, end_hhmm: str) -> bool:
+    """
+    判断当前时刻是否位于监控时段。
+    - 同日时段：start <= now < end
+    - 跨天时段：now >= start 或 now < end
+    - start == end：按全天可监控处理，避免误配置导致永久停机
+    """
+    start_t = _parse_hhmm(start_hhmm, DEFAULT_CONFIG["monitor_window"]["start"])
+    end_t = _parse_hhmm(end_hhmm, DEFAULT_CONFIG["monitor_window"]["end"])
+
+    if start_t == end_t:
+        return True
+    if start_t < end_t:
+        return start_t <= now_time < end_t
+    return now_time >= start_t or now_time < end_t
+
+
+def run_one_round(state_mgr: AlertStateManager) -> None:
+    """执行一轮抓价与提醒。"""
+    config = load_config()
+    send_keys = config.get("send_keys", [])
+    tasks = load_tasks()
+    if not tasks:
+        append_log("当前没有监控任务。")
+        return
+
+    append_log(f"开始执行新一轮监控，共 {len(tasks)} 条任务。")
+    state_mgr.prune_old()
+
+    for task in tasks:
+        if not task.get("enabled", True):
+            continue
+
+        date = str(task.get("date", "")).strip()
+        from_code = str(task.get("from_code", "")).strip().upper()
+        to_code = str(task.get("to_code", "")).strip().upper()
+        fare_type = str(task.get("fare_type", "normal")).strip().lower()
+        if fare_type not in ("normal", "plus"):
+            fare_type = "normal"
+        fare_label = "PLUS专享" if fare_type == "plus" else "普通票价"
+
+        try:
+            target_price = int(task.get("target_price", 199))
+        except (TypeError, ValueError):
+            target_price = 199
+
+        if not (date and from_code and to_code):
+            append_log(f"任务参数不完整，已跳过：{task}")
+            continue
+
+        from_city = code_to_city_only(from_code)
+        to_city = code_to_city_only(to_code)
+        append_log(f"查询任务：{date} | {from_city}({from_code})->{to_city}({to_code}) | {fare_label} | 目标<= {target_price}")
+
+        try:
+            fares = real_fetch_price(
+                from_code=from_code,
+                to_code=to_code,
+                date=date,
+                fare_type=fare_type,
+            )
+        except TokenExpiredError as exc:
+            reason = str(exc)
+            append_log(f"[阻断] 凭证疑似过期：{reason}")
+
+            if state_mgr.should_send_token_alert():
+                send_token_expired_alert(send_keys, reason)
+                state_mgr.mark_token_alert()
+                append_log("已发送 Token 过期高优先级告警。")
+            else:
+                append_log("Token 告警处于冷却期，跳过重复推送。")
+            return
+
+        if not fares:
+            append_log("未获取到航班价格或接口返回为空。")
+            continue
+
+        pushed_count = 0
+        for item in fares:
+            flight = str(item.get("flight", "UNKNOWN"))
+            price = item.get("price")
+            if not isinstance(price, int):
+                continue
+
+            append_log(f"{flight} | {price} 元")
+            if price <= target_price:
+                fingerprint = _build_fingerprint(task, flight, price)
+                if state_mgr.should_alert(fingerprint):
+                    send_price_alert(send_keys, task, flight, price)
+                    state_mgr.mark_alert(fingerprint)
+                    pushed_count += 1
+
+        if pushed_count > 0:
+            append_log(f"已发送 {pushed_count} 条低价提醒。")
+
+
+def main() -> None:
+    """daemon 主循环。"""
+    ensure_file(CONFIG_PATH, DEFAULT_CONFIG)
+    ensure_file(TASKS_PATH, DEFAULT_TASKS)
+    ensure_file(LOG_PATH, "")
+    ensure_file(STATE_PATH, {"price_alerts": {}, "token_alert": {"last_ts": 0}})
+
+    # 读取配置中的冷却时间
+    config = load_config()
+    alert_cooldown_hours = int(config.get("alert_cooldown", {}).get("hours", 1))
+    window_seconds = alert_cooldown_hours * 3600
+
+    state_mgr = AlertStateManager(state_path=STATE_PATH, window_seconds=window_seconds)
+    append_log(f"状态管理器已初始化，价格提醒冷却期：{alert_cooldown_hours}小时")
+
+    append_log("daemon 已启动。")
+    monitor_window_active: bool | None = None
+
+    while True:
+        config = load_config()
+        status = str(config.get("status", "stopped")).lower()
+        check_interval = int(config.get("runtime", {}).get("check_status_interval_sec", 3))
+        if check_interval <= 0:
+            check_interval = 3
+
+        if status != "running":
+            monitor_window_active = None
+            time.sleep(check_interval)
+            continue
+
+        window_cfg = config.get("monitor_window", DEFAULT_CONFIG["monitor_window"])
+        start_hhmm = str(window_cfg.get("start", DEFAULT_CONFIG["monitor_window"]["start"]))
+        end_hhmm = str(window_cfg.get("end", DEFAULT_CONFIG["monitor_window"]["end"]))
+        now_time = datetime.now().time()
+        in_window = _is_in_monitor_window(now_time=now_time, start_hhmm=start_hhmm, end_hhmm=end_hhmm)
+
+        if not in_window:
+            if monitor_window_active is not False:
+                append_log(f"当前不在监控时段（{start_hhmm}-{end_hhmm}），daemon 待机中。")
+            monitor_window_active = False
+            time.sleep(check_interval)
+            continue
+
+        if monitor_window_active is not True:
+            append_log(f"进入监控时段（{start_hhmm}-{end_hhmm}），开始执行监控。")
+        monitor_window_active = True
+
+        run_one_round(state_mgr)
+
+        wait_seconds = get_next_interval_seconds(
+            polling=config.get("polling", DEFAULT_CONFIG["polling"])
+        )
+        append_log(f"本轮结束，约 {wait_seconds} 秒后进行下一次查询。")
+        sleep_with_status_check(wait_seconds, check_interval)
+
+
+if __name__ == "__main__":
+    main()

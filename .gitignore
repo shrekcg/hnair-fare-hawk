@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+
+# Local runtime/state/secrets
+.env
+config.json
+tasks.json
+runtime_state.json
+credentials_auto.json
+credentials_cache.json
+
+# Logs
+*.log
+run_log.txt
+streamlit.log
+streamlit.out.log
+streamlit.err.log
+daemon.out.log
+daemon.err.log
+daemon_stdout.log
+
+# OS
+.DS_Store
+Thumbs.db
