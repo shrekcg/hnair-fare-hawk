@@ -26,3 +26,6 @@ daemon_stdout.log
 # OS
 .DS_Store
 Thumbs.db
+
+# 本地私有（请求文件等敏感内容）
+.private/

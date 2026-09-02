@@ -668,6 +668,9 @@ def _build_request_profile(
             origin_destinations[0]["departureDate"] = date
         if fare_type == "plus":
             data["specialZone"] = "ffl"
+            # PLUS 会员专享通道固定使用 ffl/airLowFareSearch 端点。
+            # 抓包抓到的 airCtLowFareSearch 是普通低价接口，对 PLUS 会返回 0903“无航班”。
+            captured_profile["url"] = REQUEST_URL_PLUS
 
         captured_profile["payload"] = payload
         return captured_profile

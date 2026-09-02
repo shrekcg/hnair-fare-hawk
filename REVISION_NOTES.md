@@ -102,3 +102,25 @@
 | 抓价循环（假数据） | running → 监控时段 → 任务 → 请求 → 空结果 → 随机间隔 |
 | 占位符阻断 | `{"ok": false, "error_type": "credential"}` exit 2 |
 | 监听地址 | `*:8501`（见问题 1） |
+
+---
+
+## 五、上线后追加发现（2026-09-02 15:20，真实凭证实测）
+
+### F1. 抓包接口选错会导致「官方有票、程序无票」
+- 用户抓到的 cURL 是 `https://app.hnair.com/ticket/lfs/airCtLowFareSearch`，该接口对 PLUS 查询恒返回 `0903 抱歉，暂时没有可预订的航班`（换日期、航线均如此）。
+- 官网「PLUS会员专属抢票通道」展示 ¥199 的请求实际走 **`https://app.hnair.com/ticket/lfs/ffl/airLowFareSearch`**（fetcher 模板 REQUEST_URL_PLUS 原本就正确）。
+- 已修复：`_build_request_profile` 对 `fare_type == "plus"` 强制使用 REQUEST_URL_PLUS，不再沿用抓包 URL。修复后实测返回 JD5290 / HU7397，`minLowPrice=199`（含税 319，税费 120），与官网截图一致；daemon 命中阈值并成功推送微信。
+
+### F2. 本地签名算法与线上不一致（重要，影响后续优化）
+- 实测：`_make_hnair_sign` 用抓包的 appver/did/stime/token 重算，结果与抓包 `hnairSign` **不一致**（比对 False）。
+- 后果：任何「改动 payload 字段 + 重签」的请求都会收到 `E00001 验签错误`（试过 passenger=ADT:1、去掉 specialZone 均如此）。
+- 约束：**目前只能原样保留抓包 payload**，每轮只替换 origin/destination/departureDate（实测这三个字段不在签名内，服务器接受）。
+- 影响优化项 4/7（stime 刷新 + 重签兜底）：必须先逆向官方前端 JS 拿到真实签名算法，否则该项无法落地。可留作后续专项。
+
+### F3. 签名不覆盖 URL 路径
+- 同一条抓包签名 + 原 payload，换 URL 路径：
+  - `/lfs/ffl/airCtLowFareSearch` → HTTP 404（该路径不存在）
+  - `/lfs/ffl/airLowFareSearch` → 200 正常出票
+  - `/lfs/airCtLowFareSearch` → 200（无 PLUS 航班，返回 0903）
+- 说明签名验的是 query + headers + payload 要素，不含 path；这也是 F1 修复能成立的前提。
