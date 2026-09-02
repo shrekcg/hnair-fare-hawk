@@ -23,6 +23,7 @@
 ├── requirements.txt
 ├── .gitignore              # 已排除 config.json / tasks.json / runtime_state.json / run_log.txt / .venv
 ├── REVISION_NOTES.md       # 代码审阅记录（发现问题清单）
+├── CHANGES_AND_USAGE.md    # 改动说明与使用指南（改了什么/使用方式变化/票据管理入口）
 ├── PROJECT_NOTES.md        # 本文件：项目说明与开发约定
 └── docs/                   # 上游自带的教程（QUICK_START_WITH_AI.md 等）
 ```

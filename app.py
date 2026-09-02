@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import portalocker
 import streamlit as st
+from backend.fetcher import parse_curl_command
 from backend.notifier import send_test_alert
 from city_codes import city_options, code_to_city_label, resolve_code
 
@@ -149,6 +150,31 @@ def save_proxy(proxy: str) -> None:
     config = load_config()
     config["proxy"] = str(proxy or "").strip()
     _write_json(CONFIG_PATH, config)
+
+
+def save_curl(raw: str, fare_type: str) -> tuple[bool, str]:
+    """校验并保存抓包 cURL 到 config.json（fare_type: plus / normal）。
+
+    返回 (是否成功, 提示信息)。保存后 daemon 下一轮自动生效，无需重启。
+    """
+    text = str(raw or "").strip()
+    key = "plus_curl" if fare_type == "plus" else "normal_curl"
+    if not text:
+        return False, "内容为空，未保存。"
+
+    parsed = parse_curl_command(text)
+    url = str(parsed.get("url", "")).strip()
+    if not url:
+        return False, "未能从内容中识别到请求地址。请用浏览器开发者工具 Copy as cURL 复制完整命令。"
+    if "hnair.com" not in url:
+        return False, f"识别到的地址不是海航接口（{url[:80]}），请确认抓的是官网查询请求。"
+    if not parsed.get("data"):
+        return False, "内容中没有识别到请求体（--data-raw）。请确认复制的是完整的 POST 查询请求。"
+
+    config = load_config()
+    config[key] = text
+    _write_json(CONFIG_PATH, config)
+    return True, f"已保存到 {key}（{len(text)} 字符），daemon 下一轮自动生效。"
 
 
 def read_price_history(line_count: int = 50) -> List[Dict[str, Any]]:
@@ -333,6 +359,52 @@ def main() -> None:
                 f"监控时段已保存：{start_input.strftime('%H:%M')} - {end_input.strftime('%H:%M')}"
             )
             st.rerun()
+
+        st.divider()
+        with st.expander("票据管理（抓包请求 cURL）", expanded=False):
+            st.caption("PLUS 与普通票据互相独立。保存后 daemon 下一轮自动生效，无需重启。")
+            plus_ok = bool(str(config.get("plus_curl", "")).strip())
+            normal_ok = bool(str(config.get("normal_curl", "")).strip())
+            st.caption(
+                "当前状态："
+                + ("PLUS专享 ✅ 已配置" if plus_ok else "PLUS专享 ❌ 未配置")
+                + " ｜ "
+                + ("普通票价 ✅ 已配置" if normal_ok else "普通票价 ❌ 未配置")
+            )
+            st.markdown("**PLUS 专享票据**（对应任务页的「PLUS专享」票价）")
+            plus_raw = st.text_area(
+                "PLUS 票据 cURL",
+                value=str(config.get("plus_curl", "")),
+                height=120,
+                key="curl_plus",
+                label_visibility="collapsed",
+            )
+            if st.button("保存 PLUS 票据", key="save_plus_btn"):
+                ok, msg = save_curl(plus_raw, "plus")
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+            st.markdown("**普通票价票据**（对应任务页的「普通票价」票价）")
+            normal_raw = st.text_area(
+                "普通票据 cURL",
+                value=str(config.get("normal_curl", "")),
+                height=120,
+                key="curl_normal",
+                label_visibility="collapsed",
+            )
+            if st.button("保存普通票据", key="save_normal_btn"):
+                ok, msg = save_curl(normal_raw, "normal")
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+            st.caption(
+                "抓票方法：官网查询页按 F12 → Network → 筛选 airLowFareSearch → "
+                "右键请求 → Copy → Copy as cURL (bash)。"
+                "PLUS 通道抓 ffl/airLowFareSearch，普通票价抓 airLowFareSearch，两份要各自抓。"
+                "若粘贴后报“无法识别”，请改用 Copy as cURL (cmd) 格式再试。"
+            )
 
         st.divider()
         with st.expander("高级设置", expanded=False):
