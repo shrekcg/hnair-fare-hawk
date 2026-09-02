@@ -118,6 +118,12 @@
 - 约束：**目前只能原样保留抓包 payload**，每轮只替换 origin/destination/departureDate（实测这三个字段不在签名内，服务器接受）。
 - 影响优化项 4/7（stime 刷新 + 重签兜底）：必须先逆向官方前端 JS 拿到真实签名算法，否则该项无法落地。可留作后续专项。
 
+### F4. 普通票价「代码已支持、实际暂不可用」（2026-09-02 实测）
+- 代码路径完整：`REQUEST_URL`（普通入口 `airLowFareSearch`）、`_build_request_profile(fare_type="normal")`、任务页「普通票价」选项都存在，前端也不强制要求 `normal_curl`。
+- 但实测 `real_fetch_price("SZX","HGH","2026-09-17", fare_type="normal")`（未配置 `normal_curl`）→ `TokenExpiredError: E00001 验签错误`。
+- 原因：没有 `normal_curl` 抓包模板时走「静态模板 + 本地 `_make_hnair_sign` 重签」，而本地签名与线上不一致（同 F2）。
+- 结论：普通监控真正跑通的前提是用户提供一份「普通票价查询」抓包 cURL（导入流程同 PLUS，入口不同：普通用 `airLowFareSearch`，与 PLUS 的 `ffl/airLowFareSearch` 区分）。
+
 ### F3. 签名不覆盖 URL 路径
 - 同一条抓包签名 + 原 payload，换 URL 路径：
   - `/lfs/ffl/airCtLowFareSearch` → HTTP 404（该路径不存在）
