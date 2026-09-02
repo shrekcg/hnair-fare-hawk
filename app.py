@@ -41,6 +41,8 @@ DEFAULT_CONFIG = {
     "plus_curl": "",
     "proxy": "",
     "sign_refresh": False,
+    # 通知渠道：飞书（企业自建应用机器人）。app_secret 仅在保存时写入，任何接口不回传。
+    "feishu": {"app_id": "", "app_secret": "", "receiver": ""},
 }
 DEFAULT_TASKS = {"tasks": []}
 DEFAULT_STATE = {"price_alerts": {}, "token_alert": {"last_ts": 0}}
@@ -113,13 +115,16 @@ def add_task(
     to_code: str,
     target_price: int,
     fare_type: str = "normal",
+    task_date_end: str = "",
 ) -> None:
+    """新增监控任务。task_date_end 为空表示只监控单日。"""
     tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
     task_list = tasks.get("tasks", [])
     task_list.append(
         {
             "id": str(uuid.uuid4()),
             "date": task_date,
+            "date_end": task_date_end or task_date,
             "from_code": from_code.strip().upper(),
             "to_code": to_code.strip().upper(),
             "target_price": int(target_price),
@@ -150,6 +155,25 @@ def set_task_enabled(task_id: str, enabled: bool) -> None:
 def save_proxy(proxy: str) -> None:
     config = load_config()
     config["proxy"] = str(proxy or "").strip()
+    _write_json(CONFIG_PATH, config)
+
+
+def save_feishu(app_id: str = "", app_secret: str = "", receiver: str = "") -> None:
+    """保存飞书通知渠道配置。
+
+    规则：
+    - app_id / receiver 传空串表示清空；
+    - app_secret 传空串表示“不修改”（secret 从不回传前端，空=未改动）。
+    """
+    config = load_config()
+    feishu = config.setdefault("feishu", dict(DEFAULT_CONFIG["feishu"]))
+    if not isinstance(feishu, dict):
+        feishu = dict(DEFAULT_CONFIG["feishu"])
+        config["feishu"] = feishu
+    feishu["app_id"] = str(app_id or "").strip() if app_id is not None else feishu.get("app_id", "")
+    feishu["receiver"] = str(receiver or "").strip() if receiver is not None else feishu.get("receiver", "")
+    if app_secret:
+        feishu["app_secret"] = str(app_secret).strip()
     _write_json(CONFIG_PATH, config)
 
 
@@ -214,6 +238,13 @@ def load_config() -> Dict[str, Any]:
     config.setdefault("plus_curl", DEFAULT_CONFIG["plus_curl"])
     config.setdefault("proxy", DEFAULT_CONFIG["proxy"])
     config.setdefault("sign_refresh", DEFAULT_CONFIG["sign_refresh"])
+    config.setdefault("feishu", dict(DEFAULT_CONFIG["feishu"]))
+
+    if not isinstance(config["feishu"], dict):
+        config["feishu"] = dict(DEFAULT_CONFIG["feishu"])
+    else:
+        for k, v in DEFAULT_CONFIG["feishu"].items():
+            config["feishu"].setdefault(k, v)
 
     if not isinstance(config["monitor_window"], dict):
         config["monitor_window"] = dict(DEFAULT_CONFIG["monitor_window"])

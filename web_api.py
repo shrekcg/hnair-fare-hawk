@@ -36,13 +36,14 @@ from app import (  # noqa: E402
     read_last_log_lines,
     read_price_history,
     save_curl,
+    save_feishu,
     save_monitor_window,
     save_proxy,
     save_send_keys,
     set_status,
     set_task_enabled,
 )
-from backend.notifier import send_test_alert  # noqa: E402
+from backend.notifier import send_test_alert, test_feishu  # noqa: E402
 from city_codes import city_options, resolve_code  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -86,10 +87,13 @@ def _ticket_summary(curl: str) -> Dict[str, Any]:
 
 
 def _sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
-    """返回给前端的配置：凭证类字段脱敏，绝不回传完整 SendKey/cURL。"""
+    """返回给前端的配置：凭证类字段脱敏，绝不回传完整 SendKey/cURL/AppSecret。"""
     send_keys = [str(k) for k in config.get("send_keys", []) if str(k).strip()]
     plus_curl = str(config.get("plus_curl", "") or "").strip()
     normal_curl = str(config.get("normal_curl", "") or "").strip()
+    feishu = config.get("feishu") or {}
+    feishu_app_id = str(feishu.get("app_id", "") or "").strip()
+    feishu_receiver = str(feishu.get("receiver", "") or "").strip()
 
     return {
         "status": config.get("status", "stopped"),
@@ -104,6 +108,13 @@ def _sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
         "plus_ticket": _ticket_summary(plus_curl),
         "normal_ticket": _ticket_summary(normal_curl),
         "polling": config.get("polling", DEFAULT_CONFIG.get("polling", {})),
+        # 飞书渠道：AppID 掩码展示（前4后4），AppSecret 永不回传，receiver 不敏感可展示
+        "feishu": {
+            "configured": bool(feishu_app_id and str(feishu.get("app_secret", "") or "").strip()),  # noqa: E501
+            "app_id": _mask_key(feishu_app_id),
+            "has_secret": bool(str(feishu.get("app_secret", "") or "").strip()),
+            "receiver": feishu_receiver,
+        },
     }
 
 
@@ -131,6 +142,7 @@ def _build_state() -> Dict[str, Any]:
             {
                 "id": t.get("id", ""),
                 "date": t.get("date", ""),
+                "date_end": t.get("date_end") or t.get("date", ""),
                 "from_code": t.get("from_code", ""),
                 "from_city": code_to_city_label(str(t.get("from_code", ""))),
                 "to_code": t.get("to_code", ""),
@@ -321,6 +333,22 @@ class Handler(BaseHTTPRequestHandler):
                 from app import _write_json, CONFIG_PATH  # noqa: PLC0415
                 _write_json(CONFIG_PATH, config)
                 _send_json(self, 200, {"ok": True, "sign_refresh": bool(data.get("enabled", False))})
+            elif path == "/api/feishu":
+                self._post_feishu(data)
+            elif path == "/api/feishu/test":
+                config = load_config()
+                feishu = config.get("feishu") or {}
+                app_id = str(data.get("app_id", "")).strip() or str(feishu.get("app_id", "") or "").strip()
+                app_secret = str(data.get("app_secret", "")).strip() or str(feishu.get("app_secret", "") or "").strip()
+                receiver = str(data.get("receiver", "")).strip() or str(feishu.get("receiver", "") or "").strip()
+                if not (app_id and app_secret and receiver):
+                    _send_json(self, 400, {"ok": False, "error": "飞书配置不完整，请先填写 App ID / App Secret / 接收人。"})
+                    return
+                ok, err = test_feishu(app_id, app_secret, receiver)
+                if ok:
+                    _send_json(self, 200, {"ok": True, "success": True, "message": "测试消息已发送，请到飞书查看。"})
+                else:
+                    _send_json(self, 200, {"ok": True, "success": False, "error": err})
             elif path == "/api/ticket":
                 fare_type = "plus" if str(data.get("fare_type", "plus")) == "plus" else "normal"
                 ok, msg = save_curl(str(data.get("raw", "")), fare_type)
@@ -332,6 +360,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _post_task(self, data: Dict[str, Any]) -> None:
         task_date = str(data.get("date", "")).strip()
+        task_date_end = str(data.get("date_end", "")).strip()
         from_city = str(data.get("from_city", "")).strip()
         to_city = str(data.get("to_city", "")).strip()
         target_price = int(data.get("target_price") or 199)
@@ -339,6 +368,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if not task_date:
             _send_json(self, 400, {"ok": False, "error": "请先选择日期。"})
+            return
+        if task_date_end and task_date_end < task_date:
+            _send_json(self, 400, {"ok": False, "error": "结束日期不能早于开始日期。"})
             return
         if not from_city:
             _send_json(self, 400, {"ok": False, "error": "请先填写出发地。"})
@@ -361,18 +393,35 @@ class Handler(BaseHTTPRequestHandler):
 
         add_task(
             task_date=task_date,
+            task_date_end=task_date_end,
             from_code=from_code,
             to_code=to_code,
             target_price=target_price,
             fare_type=fare_type,
         )
         label = "PLUS专享" if fare_type == "plus" else "普通票价"
+        date_label = task_date if not task_date_end else f"{task_date} ~ {task_date_end}"
         _send_json(
             self,
             200,
             {
                 "ok": True,
-                "message": f"任务已添加：{task_date} | {code_to_city_label(from_code)} -> {code_to_city_label(to_code)} | {label} | <= {target_price}",
+                "message": f"任务已添加：{date_label} | {code_to_city_label(from_code)} -> {code_to_city_label(to_code)} | {label} | <= {target_price}",
+            },
+        )
+
+    def _post_feishu(self, data: Dict[str, Any]) -> None:
+        """保存飞书通知渠道配置。app_secret 为空串表示不修改（永不回传）。"""
+        app_id = str(data.get("app_id", "")).strip()
+        app_secret = str(data.get("app_secret", "")).strip()
+        receiver = str(data.get("receiver", "")).strip()
+        save_feishu(app_id=app_id, app_secret=app_secret, receiver=receiver)
+        _send_json(
+            self,
+            200,
+            {
+                "ok": True,
+                "message": "飞书配置已保存" + ("（App Secret 未修改）" if not app_secret else ""),
             },
         )
 

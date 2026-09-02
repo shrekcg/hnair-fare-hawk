@@ -6,13 +6,18 @@ import json
 import os
 import random
 import time
-from datetime import datetime, time as dt_time
+from datetime import datetime, time as dt_time, timedelta
 from typing import Any, Dict, List
 
 import portalocker
 
 from backend.fetcher import TokenExpiredError, fetch_price_status
-from backend.notifier import send_price_alert, send_token_expired_alert
+from backend.notifier import (
+    send_feishu_price_alert,
+    send_feishu_token_alert,
+    send_price_alert,
+    send_token_expired_alert,
+)
 from backend.scheduler import get_next_interval_seconds
 from backend.state import AlertStateManager
 from city_codes import code_to_city_only
@@ -149,6 +154,32 @@ def load_tasks() -> List[Dict[str, Any]]:
     return result
 
 
+def expand_dates(task: Dict[str, Any]) -> List[str]:
+    """展开任务监控日期。
+
+    - 单日任务（无 date_end 或 date_end == date）返回 [date]；
+    - 区间任务返回 date ~ date_end 之间的每一天（含首尾）；
+    - 日期无效时原样返回 [date]，交给下游按单日处理。
+    """
+    start = str(task.get("date", "") or "").strip()
+    end = str(task.get("date_end", "") or "").strip() or start
+    if not start:
+        return []
+    try:
+        d0 = datetime.strptime(start, "%Y-%m-%d").date()
+        d1 = datetime.strptime(end, "%Y-%m-%d").date()
+    except ValueError:
+        return [start]
+    if d1 < d0:
+        d0, d1 = d1, d0
+    dates: List[str] = []
+    cur = d0
+    while cur <= d1:
+        dates.append(cur.isoformat())
+        cur += timedelta(days=1)
+    return dates
+
+
 def sleep_with_status_check(seconds: int, check_interval: int) -> None:
     """分段休眠，便于快速响应 stop。"""
     elapsed = 0
@@ -213,6 +244,7 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
     """
     config = load_config()
     send_keys = config.get("send_keys", [])
+    feishu_cfg = config.get("feishu") or {}
     all_tasks = load_tasks()
     tasks = [task for task in all_tasks if task.get("enabled", True)]
     if not tasks:
@@ -227,7 +259,6 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
     for index, task in enumerate(tasks):
         task_id = str(task.get("id", ""))
 
-        date = str(task.get("date", "")).strip()
         from_code = str(task.get("from_code", "")).strip().upper()
         to_code = str(task.get("to_code", "")).strip().upper()
         fare_type = str(task.get("fare_type", "normal")).strip().lower()
@@ -240,9 +271,15 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
         except (TypeError, ValueError):
             target_price = 199
 
-        if not (date and from_code and to_code):
+        dates = expand_dates(task)
+        if not dates:
+            append_log(f"任务缺少日期，已跳过：{task}")
+            continue
+        if not (from_code and to_code):
             append_log(f"任务参数不完整，已跳过：{task}")
             continue
+        if len(dates) > 15:
+            append_log(f"任务为一日期区间（共 {len(dates)} 天），每轮将逐日查询。")
 
         # 凭证失败退避：仍在退避窗口内的任务直接跳过本轮。
         _, next_ok_ts = state_mgr.get_task_backoff(task_id)
@@ -259,68 +296,76 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
 
         from_city = code_to_city_only(from_code)
         to_city = code_to_city_only(to_code)
-        append_log(f"查询任务：{date} | {from_city}({from_code})->{to_city}({to_code}) | {fare_label} | 目标<= {target_price}")
-
-        try:
-            status, fares = fetch_price_status(
-                from_code=from_code,
-                to_code=to_code,
-                date=date,
-                fare_type=fare_type,
-            )
-        except TokenExpiredError as exc:
-            state_mgr.mark_task_failure(task_id)
-            reason = str(exc)
-            append_log(f"[鉴权失败] {reason}（该任务进入退避）")
-
-            if state_mgr.should_send_token_alert():
-                send_token_expired_alert(send_keys, reason)
-                state_mgr.mark_token_alert()
-                append_log("已发送 Token 过期高优先级告警。")
-            else:
-                append_log("Token 告警处于冷却期，跳过重复推送。")
-            continue
-
-        if status == "network":
-            append_log("请求失败（网络不通 / 网关错误 / 429 限流），本轮跳过。")
-            continue
-        if status == "parse":
-            append_log("接口返回结构异常（非 JSON 或字段变化），本轮跳过。")
-            continue
-        if not fares:
-            append_log("接口正常返回但无可用航班（无票或价格不可购）。")
-            continue
-
-        # 取到价格：任务恢复，清零退避计数。
-        state_mgr.mark_task_success(task_id)
-        saw_prices = True
-
         pushed_count = 0
-        for item in fares:
-            flight = str(item.get("flight", "UNKNOWN"))
-            price = item.get("price")
-            if not isinstance(price, int):
+
+        for date in dates:
+            append_log(f"查询任务：{date} | {from_city}({from_code})->{to_city}({to_code}) | {fare_label} | 目标<= {target_price}")
+
+            try:
+                status, fares = fetch_price_status(
+                    from_code=from_code,
+                    to_code=to_code,
+                    date=date,
+                    fare_type=fare_type,
+                )
+            except TokenExpiredError as exc:
+                state_mgr.mark_task_failure(task_id)
+                reason = str(exc)
+                append_log(f"[鉴权失败] {reason}（该任务进入退避）")
+
+                if state_mgr.should_send_token_alert():
+                    send_token_expired_alert(send_keys, reason)
+                    send_feishu_token_alert(feishu_cfg, reason)
+                    state_mgr.mark_token_alert()
+                    append_log("已发送 Token 过期高优先级告警。")
+                else:
+                    append_log("Token 告警处于冷却期，跳过重复推送。")
+                break
+
+            if status == "network":
+                append_log("请求失败（网络不通 / 网关错误 / 429 限流），本轮跳过。")
+                continue
+            if status == "parse":
+                append_log("接口返回结构异常（非 JSON 或字段变化），本轮跳过。")
+                continue
+            if not fares:
+                append_log("接口正常返回但无可用航班（无票或价格不可购）。")
                 continue
 
-            append_log(f"{flight} | {price} 元")
-            append_history(
-                {
-                    "ts": datetime.now().isoformat(timespec="seconds"),
-                    "task_id": task_id,
-                    "date": date,
-                    "from": from_code,
-                    "to": to_code,
-                    "fare_type": fare_type,
-                    "flight": flight,
-                    "price": price,
-                }
-            )
-            if price <= target_price:
-                fingerprint = _build_fingerprint(task, flight, price)
-                if state_mgr.should_alert(fingerprint):
-                    send_price_alert(send_keys, task, flight, price)
-                    state_mgr.mark_alert(fingerprint)
-                    pushed_count += 1
+            # 取到价格：任务恢复，清零退避计数。
+            state_mgr.mark_task_success(task_id)
+            saw_prices = True
+
+            for item in fares:
+                flight = str(item.get("flight", "UNKNOWN"))
+                price = item.get("price")
+                if not isinstance(price, int):
+                    continue
+
+                append_log(f"{flight} | {price} 元")
+                append_history(
+                    {
+                        "ts": datetime.now().isoformat(timespec="seconds"),
+                        "task_id": task_id,
+                        "date": date,
+                        "from": from_code,
+                        "to": to_code,
+                        "fare_type": fare_type,
+                        "flight": flight,
+                        "price": price,
+                    }
+                )
+                if price <= target_price:
+                    # 提醒用“命中当天”的任务视图：正文显示具体日期，指纹含日期可避免区间内重复推送。
+                    alert_task = dict(task)
+                    alert_task["date"] = date
+                    alert_task["date_end"] = str(task.get("date_end", "") or "")
+                    fingerprint = _build_fingerprint(alert_task, flight, price)
+                    if state_mgr.should_alert(fingerprint):
+                        send_price_alert(send_keys, alert_task, flight, price)
+                        send_feishu_price_alert(feishu_cfg, alert_task, flight, price)
+                        state_mgr.mark_alert(fingerprint)
+                        pushed_count += 1
 
         if pushed_count > 0:
             append_log(f"已发送 {pushed_count} 条低价提醒。")

@@ -137,3 +137,108 @@ def test_ticket_summary_does_not_leak_query(api_server, tmp_path):
     summary = _ticket_summary("curl 'https://app.hnair.com/ticket/lfs/airLowFareSearch?token=SECRETTOKEN&hnairSign=SECRET' -H 'x: y' --data-raw '{}'")
     assert "SECRETTOKEN" not in summary["url"]
     assert summary["url"] == "https://app.hnair.com/ticket/lfs/airLowFareSearch"
+
+
+def test_add_task_with_date_range(api_server):
+    base, tmp = api_server
+    payload = {
+        "date": "2026-09-20",
+        "date_end": "2026-09-30",
+        "from_city": "深圳",
+        "to_city": "杭州",
+        "target_price": 199,
+        "fare_type": "normal",
+    }
+    r = requests.post(f"{base}/api/tasks", json=payload, timeout=5)
+    assert r.status_code == 200
+    tasks = json.loads((tmp / "tasks.json").read_text(encoding="utf-8"))["tasks"]
+    assert tasks[0]["date"] == "2026-09-20"
+    assert tasks[0]["date_end"] == "2026-09-30"
+
+    # state 接口应返回 date_end
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert state["tasks"][0]["date_end"] == "2026-09-30"
+
+
+def test_add_task_date_range_invalid_rejected(api_server):
+    base, _ = api_server
+    r = requests.post(
+        f"{base}/api/tasks",
+        json={"date": "2026-09-30", "date_end": "2026-09-20", "from_city": "SZX", "to_city": "HGH", "target_price": 199},
+        timeout=5,
+    )
+    assert r.status_code == 400
+    assert "结束日期不能早于开始日期" in r.json()["error"]
+
+
+def test_feishu_save_and_mask(api_server):
+    base, _ = api_server
+    r = requests.post(
+        f"{base}/api/feishu",
+        json={"app_id": "cli_a1b2c3d4", "app_secret": "SECRETSECRETSECRET", "receiver": "me@example.com"},
+        timeout=5,
+    )
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    feishu = state["config"]["feishu"]
+    assert feishu["configured"] is True
+    assert feishu["has_secret"] is True
+    # AppID 掩码，不完整回显
+    assert feishu["app_id"] != "cli_a1b2c3d4"
+    assert "****" in feishu["app_id"]
+    # receiver 不敏感可展示
+    assert feishu["receiver"] == "me@example.com"
+
+    # 序列化后的完整 state 里也绝不能出现 app_secret
+    raw = requests.get(f"{base}/api/state", timeout=5).text
+    assert "SECRETSECRETSECRET" not in raw
+
+
+def test_feishu_empty_secret_keeps_old(api_server):
+    base, _ = api_server
+    requests.post(
+        f"{base}/api/feishu",
+        json={"app_id": "cli_a1b2c3d4", "app_secret": "SECRETSECRETSECRET", "receiver": "me@example.com"},
+        timeout=5,
+    )
+    # 再次保存时不带 secret：secret 保持不变，receiver 更新
+    r = requests.post(f"{base}/api/feishu", json={"app_id": "cli_a1b2c3d4", "app_secret": "", "receiver": "new@example.com"}, timeout=5)
+    assert r.status_code == 200
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    feishu = state["config"]["feishu"]
+    assert feishu["has_secret"] is True
+    assert feishu["receiver"] == "new@example.com"
+    # app_id 清空会生效（数据层）
+    requests.post(f"{base}/api/feishu", json={"app_id": "", "app_secret": "", "receiver": ""}, timeout=5)
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert state["config"]["feishu"]["configured"] is False
+
+
+def test_feishu_message_missing_config_no_network():
+    """缺配置时直接返回失败，不发网络请求。"""
+    from backend.notifier import send_feishu_message
+
+    ok, err = send_feishu_message("", "", "", "title", "content")
+    assert ok is False
+    assert "不完整" in err
+
+def test_expand_dates():
+    """daemon 日期区间展开逻辑。"""
+    from daemon import expand_dates
+
+    # 单日（无 date_end）
+    assert expand_dates({"date": "2026-09-20"}) == ["2026-09-20"]
+    # 单日（date_end 与 date 相同）
+    assert expand_dates({"date": "2026-09-20", "date_end": "2026-09-20"}) == ["2026-09-20"]
+    # 区间
+    dates = expand_dates({"date": "2026-09-20", "date_end": "2026-09-22"})
+    assert dates == ["2026-09-20", "2026-09-21", "2026-09-22"]
+    # 倒序被纠正
+    dates = expand_dates({"date": "2026-09-22", "date_end": "2026-09-20"})
+    assert dates == ["2026-09-20", "2026-09-21", "2026-09-22"]
+    # 非法日期：原样返回单日
+    assert expand_dates({"date": "not-a-date", "date_end": "2026-09-20"}) == ["not-a-date"]
+    # 空任务
+    assert expand_dates({}) == []

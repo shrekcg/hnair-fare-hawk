@@ -33,6 +33,8 @@ export const api = {
     request('/api/sign_refresh', { method: 'POST', body: JSON.stringify({ enabled }) }),
   saveTicket: (fareType, raw) =>
     request('/api/ticket', { method: 'POST', body: JSON.stringify({ fare_type: fareType, raw }) }),
+  saveFeishu: (payload) => request('/api/feishu', { method: 'POST', body: JSON.stringify(payload) }),
+  testFeishu: (payload) => request('/api/feishu/test', { method: 'POST', body: JSON.stringify(payload) }),
 }
 
 export function formatTs(ts) {

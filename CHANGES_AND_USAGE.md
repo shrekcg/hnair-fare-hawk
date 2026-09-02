@@ -13,7 +13,8 @@
 | `b54c99d` | 文档：更新进度与启动方式 | `PROJECT_NOTES.md` | 无（文档） |
 | `e3a14dd` | 文档：记录普通票价实测结论（F4） | `REVISION_NOTES.md`、`PROJECT_NOTES.md` | 无（文档） |
 | `3d2082b` | **签名算法对齐官方**（`_makeSign` 逆向）+ stime 刷新重签兜底 | `backend/fetcher.py`、`config.example.json`、`app.py`、`tests/test_fetcher.py` | 默认零变化；`sign_refresh` 可选项 |
-| 本次 | **控制台 UI 重写**：Streamlit → React+Vite（顶部导航+卡片+Tab），API 层为 `web_api.py` | `web/`（新）、`web_api.py`（新）、`start_all.sh`、`stop_all.sh`、`tests/test_web_api.py` | 界面焕新；发送测试消息改为用已保存的 SendKey；空 SendKey 不再覆盖旧值 |
+| `ecf2935` | **控制台 UI 重写**：Streamlit → React+Vite（顶部导航+卡片+Tab），API 层为 `web_api.py` | `web/`（新）、`web_api.py`（新）、`start_all.sh`、`stop_all.sh`、`tests/test_web_api.py` | 界面焕新；发送测试消息改为用已保存的 SendKey；空 SendKey 不再覆盖旧值 |
+| 本次 | **UI 升级为成熟后台组件（Ant Design）** + **日期区间监控** + **飞书通知渠道** | `web/src/*`、`web/package.json`、`web/pnpm-lock.yaml`、`web_api.py`、`daemon.py`、`app.py`、`backend/notifier.py`、`tests/test_web_api.py`、`docs/feishu_notify_guide.md` | 见下表：添加任务可选「起止日期」区间；通知渠道新增飞书「测试发送」；设置页微信配置改为 5 步图文说明 |
 
 ### 优化批次1 明细（`67086af`）
 
@@ -35,17 +36,18 @@
 |---|---|---|
 | 启动/停止 | —（当初由 agent 手动双命令） | `./start_all.sh` / `./stop_all.sh` 一键 |
 | 打开页面 | `http://localhost:8501` | 同样，但**只能用本机访问**（局域网已不可见） |
-| 添加任务 | 页面「添加监控任务」 | 不变（票价类型可选「普通票价 / PLUS专享」） |
+| 添加任务 | 页面「添加监控任务」 | 可选**监控日期**（单日）或**起止日期**（区间内每天命中即提醒，自动跳过未命中日期、倒序自动纠正） |
 | 启停单任务 | 无 | 页面「任务列表」下方启停按钮 |
-| 换/加票据（cURL） | 无页面入口，需命令行脚本 | **侧边栏「票据管理」** 粘贴 → 保存，下一轮生效 |
-| 微信推送、监控时段 | 页面配置 | 不变 |
+| 换/加票据（cURL） | 无页面入口，需命令行脚本 | 页面「票据管理」Tab 粘贴 → 保存，下一轮生效 |
+| 微信推送、监控时段 | 页面配置 | 设置页通知渠道，「微信」卡内 5 步说明 + SendKey 输入（留空保存会保留原值） |
+| 飞书推送 | 无 | 设置页通知渠道，「飞书」卡内 App ID / App Secret / 接收人 + 保存 / 测试发送；接收人支持邮箱或 open_id（`ou_` 开头）；开通步骤见 `docs/feishu_notify_guide.md` |
 | 代理 | 无 | 页面高级设置（可选） |
 
-**结论：日常使用只有一处新增入口（票据管理），其余全部是向后兼容的安全/稳定增强，没有需要你改变习惯的操作。**
+**结论：日常使用新增两处可选入口（票据管理、飞书通知），其余全部是向后兼容的增强：老任务仍按原单日逻辑运行，不配置飞书则行为与之前完全一致。**
 
 ## 三、票据管理（核心资源）入口说明
 
-Web 页面侧边栏 → **票据管理（抓包请求 cURL）**。
+Web 页面顶栏 **票据管理** Tab → **票据管理（抓包请求 cURL）**。
 
 - 两块独立输入：**PLUS 专享票据** 与 **普通票价票据**，各自对应 config 的 `plus_curl` / `normal_curl`。
 - 当前状态显示：PLUS ✅ 已配置 ｜ 普通 ❌ 未配置。
@@ -55,7 +57,17 @@ Web 页面侧边栏 → **票据管理（抓包请求 cURL）**。
   - 普通票价：请求名是 `airLowFareSearch`
   - 方法：官网查询页 F12 → Network → 筛选此请求名 → 右键 Copy as cURL (bash)；若系统报“无法识别”，改用 Copy as cURL (cmd)。
 
-## 四、签名重签专项的边界（已完成并验证，不会破坏现状）
+## 四、飞书通知开通（可选，5 步）
+
+1. 打开 [飞书开放平台](https://open.feishu.cn) → 创建**企业自建应用**（「开发者后台 → 创建应用 → 企业自建」）；
+2. 应用内开启**机器人能力**；
+3. 权限管理添加 `im:message:send_as_bot`（以应用身份发消息）并**发布版本**；
+4. 凭证与基础信息页拿 **App ID / App Secret**；
+5. 接收人：填你的**邮箱**（飞书绑定邮箱）或 **open_id / user_id**（通讯录里可查）。保存后点「测试发送」验证。
+
+常见报错对照、open_id 获取方法见 `docs/feishu_notify_guide.md`。
+
+## 五、签名重签专项的边界（已完成并验证，不会破坏现状）
 
 「stime 刷新 + 重签」（优化项 7）已实现并通过双跑验证：
 

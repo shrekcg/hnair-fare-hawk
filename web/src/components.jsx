@@ -1,117 +1,34 @@
 import React, { useEffect, useState } from 'react'
 
-/* ---------- 状态徽章 ---------- */
-export function Badge({ kind = 'gray', children }) {
-  return (
-    <span className={`badge ${kind}`}>
-      <span className="dot" />
-      {children}
-    </span>
-  )
-}
-
-export function fareBadge(fareType) {
-  return fareType === 'plus' ? <Badge kind="blue">PLUS专享</Badge> : <Badge kind="gray">普通票价</Badge>
-}
-
-export function statusBadge(status) {
-  if (status === 'running') return <Badge kind="green">运行中</Badge>
-  return <Badge kind="gray">已停止</Badge>
-}
-
-/* ---------- 开关 ---------- */
-export function Switch({ checked, onChange, label, desc }) {
-  return (
-    <div className="switch-row">
-      <div>
-        <div className="switch-label">{label}</div>
-        {desc && <div className="switch-desc">{desc}</div>}
-      </div>
-      <label className="switch">
-        <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-        <span className="slider" />
-      </label>
-    </div>
-  )
-}
-
-/* ---------- 空状态 ---------- */
-export function EmptyState({ icon = '📭', title, desc, action }) {
-  return (
-    <div className="empty">
-      <div className="icon">{icon}</div>
-      <div className="title">{title}</div>
-      <div className="desc">{desc}</div>
-      {action}
-    </div>
-  )
-}
-
-/* ---------- 确认弹窗 ---------- */
-export function Confirm({ title, message, onCancel, onConfirm }) {
-  return (
-    <div className="confirm-overlay" onClick={onCancel}>
-      <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
-        <h3>{title}</h3>
-        <p>{message}</p>
-        <div className="confirm-actions">
-          <button className="btn btn-secondary" onClick={onCancel}>取消</button>
-          <button className="btn btn-danger" onClick={onConfirm}>确认删除</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ---------- 迷你趋势图 ---------- */
-export function Sparkline({ values = [], hit }) {
-  if (!values || values.length < 2) return <div className="muted">暂无趋势数据</div>
-  const w = 280
-  const h = 40
+/* ---------- 迷你趋势图（自绘 SVG，无第三方图标依赖） ---------- */
+export function Sparkline({ values = [], hit, width = 200, height = 36 }) {
+  if (!values || values.length < 2) return <span className="muted">—</span>
   const min = Math.min(...values)
   const max = Math.max(...values)
   const range = max - min || 1
   const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * w
-    const y = h - 4 - ((v - min) / range) * (h - 8)
+    const x = (i / (values.length - 1)) * width
+    const y = height - 4 - ((v - min) / range) * (height - 8)
     return `${x.toFixed(1)},${y.toFixed(1)}`
   })
   const last = pts[pts.length - 1]
-  const stroke = hit ? 'var(--color-low-price)' : 'var(--color-primary)'
+  const stroke = hit ? '#ff4d6a' : '#1677ff'
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="spark-svg" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width, height, display: 'block' }} preserveAspectRatio="none">
       <polyline
         points={pts.join(' ')}
         fill="none"
         stroke={stroke}
-        strokeWidth="2"
+        strokeWidth="1.8"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      <circle cx={last.split(',')[0]} cy={last.split(',')[1]} r="3" fill={stroke} />
+      <circle cx={last.split(',')[0]} cy={last.split(',')[1]} r="2.6" fill={stroke} />
     </svg>
   )
 }
 
-/* ---------- Toast 系统 ---------- */
-export function useToasts() {
-  const [toasts, setToasts] = useState([])
-  const push = (type, text) => {
-    const id = Date.now() + Math.random()
-    setToasts((prev) => [...prev, { id, type, text }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3200)
-  }
-  const toastNode = (
-    <div className="toast-wrap">
-      {toasts.map((t) => (
-        <div key={t.id} className={`toast ${t.type}`}>{t.text}</div>
-      ))}
-    </div>
-  )
-  return { toastNode, push }
-}
-
-/* ---------- 15s 轮询 Hook ---------- */
+/* ---------- 轮询 Hook ---------- */
 export function usePolling(fn, interval = 15000, deps = []) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
