@@ -21,10 +21,33 @@
 # 3) 查询某城市可飞航班（666/2666 档位、指定日期、方向过滤）
 .venv/bin/python scripts/sedimentation/query.py 海口 --product 666
 .venv/bin/python scripts/sedimentation/query.py 海口 --date 2026-09-15 --json data/sediment/out/海口_666_20260915.json
+
+# 4) 产品归属冲突复核（44 条待人工裁决，见下节）
+.venv/bin/python scripts/sedimentation/review.py export   # 导出 data/sediment/review/conflicts.csv
+.venv/bin/python scripts/sedimentation/review.py apply    # 读取填好的 decision，写 review_decisions.json
+.venv/bin/python scripts/sedimentation/build_normalized.py  # 重新构建使裁决生效
 ```
 
 查询规则：`--product 666` 返回档位含 666 的航班（666/2666 双档，因为 666 卡能飞）；
 `--date` 校验落在 effective_dates 且当天班期包含该日星期；`--json` 输出清单文件（第 5 阶段与实时监控联动用）。
+
+## 产品归属冲突复核（44 条）
+
+现状：两源对同一条航线的「666/2666 档位归属」判定不同，共 44 条（如 CSV 只标 2666、HNA666 标双档）。
+**系统不会自动裁决**，需要你人工复核一次，之后记住结论（`data/sediment/review_decisions.json`）。
+
+操作步骤：
+1. `review.py export` → 打开 `data/sediment/review/conflicts.csv`（用 Numbers/Excel/WPS，带表头）：
+   - 每行含两源档位、时刻、班期、日期、备注、当前 product、**suggestion**（按起飞时刻规则给出建议：20:00–08:00 内 → 666 或 both；19-20/08-09 点 → 仅 2666）
+2. 逐行在最后一列 `decision` 填：`666` / `2666` / `both`（两档都行）/ `ignore`，保存；
+3. `review.py apply` → 写入裁决文件；
+4. `build_normalized.py` → 已裁决的键 product 按裁决生效、`product_conflict` 清除；未裁决的仍标冲突并在下次 export 继续出现。
+
+## 机场对齐（城市级 → IATA 级）
+
+- 用 `参考资料/HNA666-flight-map/CN271_cityairport_name_IATA_ICAO_coords.csv`（271 机场）把 HNA666 侧缺失的 IATA 补全；
+- 同城多机场（北京首都 PEK/大兴 PKX、上海 PVG/SHA、成都 CTU/TFU 等）按 hna 机场名精确匹配，无法唯一确定时保留空 IATA；
+- 实测：HNA666 侧 1668 条记录 origin/dest IATA 填充率 100%。
 
 ## 统一 schema（Flight）
 
@@ -40,9 +63,10 @@
 ## 规范化快照（flights_normalized.json）
 
 1733 条（2026 秋航季），每条含两源独立视角 + 合并视角：
-- `csv_products` / `hna_products` / `product`（并集，"宁多勿漏"）/ `product_conflict`（两源档位判定不同，当前 **44 条**，人工复核重点）
+- `csv_products` / `hna_products` / `product`（并集，"宁多勿漏"）/ `product_conflict`（两源档位判定不同，当前 **44 条**，通过 review.py 复核后清除）/ `review_decision`（人工裁决结果）
 - `csv_dates`（CSV 全季日期按备注修正："仅9.9"/"9.28始"/"10.8止"/"9.28~10.9" 等）/ `hna_dates`（HNA666 实际执飞日期）/ `effective_dates`（HNA666 优先、CSV 备注修正兜底）
 - `source`：both=两源都有(1455) / csv=仅 CSV(65) / hna=仅 HNA666 可兑(213)
+- `origin.iata` / `dest.iata`：CSV 侧原生，HNA666 侧用 CN271 对照表补齐
 
 ## 对比维度与当前基线（2026-09-02 首跑，秋航季 09-01~10-24）
 

@@ -19,6 +19,8 @@ from pathlib import Path
 from models import Flight, canonical_key
 from load_sxfroute import load_csv
 from load_hna666 import load_html, DEFAULT_DIR as HNA666_DIR
+from city_align import AirportIndex
+from review import load_decisions, DECISIONS
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "data" / "sediment"
 CSV_DEFAULT = Path(__file__).resolve().parents[2] / "参考资料" / "sxfroute" / "data" / "airport.csv"
@@ -122,7 +124,13 @@ def product_label(products: set[str]) -> str:
     return "/".join(sorted(products)) if products else ""
 
 
-def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]]) -> list[dict]:
+DECISION_PRODUCT = {"666": "666", "2666": "2666", "both": "666/2666"}
+
+
+def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]],
+          decisions: dict[str, str] | None = None, airports: AirportIndex | None = None) -> list[dict]:
+    decisions = decisions or {}
+    airports = airports or AirportIndex()
     csv_group: dict[tuple, list[Flight]] = {}
     for fl in csv_flights:
         csv_group.setdefault(canonical_key(fl), []).append(fl)
@@ -151,6 +159,14 @@ def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]]) -> list
         merged_products = csv_products | hna_products
         # 只有两源都收录该键，档位判定不同才算冲突；纯单源键由 source 字段表达
         conflict = csv_products != hna_products if hna_recs and csv_recs else False
+
+        # 已人工裁决的冲突键：按裁决覆盖，并从待复核中清除
+        review = ""
+        dkey = f"{fl_no}|{o_city}|{d_city}"
+        if conflict and dkey in decisions:
+            merged_products = set(DECISION_PRODUCT[decisions[dkey]].split("/"))
+            conflict = False
+            review = decisions[dkey]
 
         # 时刻/班期：CSV 优先，HNA666 兜底
         def pick_time(recs):
@@ -188,15 +204,31 @@ def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]]) -> list
         effective_dates = hna_dates if hna_dates else csv_dates
 
         ref = csv_recs[0] if csv_recs else (hna_recs[0] if hna_recs else None)
+
+        # IATA 对齐：CSV 侧已带；HNA666 侧用 CN271 补（同城多机场按机场名匹配）
+        def resolve_iata(side_ref, city):
+            if side_ref and side_ref.source == "csv" and side_ref.origin_iata and side_ref.dest_iata:
+                return side_ref.origin_iata, side_ref.dest_iata
+            if not side_ref:
+                return "", ""
+            if side_ref.origin_city == city:
+                iata = side_ref.origin_iata or airports.lookup(city, side_ref.origin_airport)[0]
+                return iata, side_ref.dest_iata
+            iata = side_ref.dest_iata or airports.lookup(city, side_ref.dest_airport)[0]
+            return side_ref.origin_iata, iata
+
+        o_iata, _ = resolve_iata(ref, o_city)
+        _, d_iata = resolve_iata(ref, d_city)
+
         records.append({
             "flight_no": fl_no,
             "carrier": ref.carrier if ref else "",
             "origin": {"city": o_city,
                        "airport": ref.origin_airport if ref else "",
-                       "iata": ref.origin_iata if ref else ""},
+                       "iata": o_iata},
             "dest": {"city": d_city,
                      "airport": ref.dest_airport if ref else "",
-                     "iata": ref.dest_iata if ref else ""},
+                     "iata": d_iata},
             "dep_time": dep,
             "arr_time": arr,
             "days": days,
@@ -209,6 +241,7 @@ def build(csv_flights: list[Flight], hna_files: dict[str, list[Flight]]) -> list
             "hna_products": sorted(hna_products),
             "product": product_label(merged_products),
             "product_conflict": conflict,
+            "review_decision": review or None,
             "notes": next((fl.notes for fl in csv_recs if fl.notes), None),
             "source": "both" if csv_recs and hna_recs else ("csv" if csv_recs else "hna"),
             "raw_csv_lines": sorted({fl.raw.get("source_line", "") for fl in csv_recs if fl.raw.get("source_line")}),
