@@ -42,16 +42,22 @@
 
 ```bash
 cd /Users/Wcg/Desktop/Project_local/海航监控
+# 一键启动双进程（Web 已绑定 127.0.0.1，仅本机可访问；启动/停止都用脚本）
+./start_all.sh
+# 停止
+./stop_all.sh
+```
+
+手动启动（通常不需要）：
+```bash
 # 前端
-.venv/bin/python -m streamlit run app.py --server.port 8501
+.venv/bin/python -m streamlit run app.py --server.headless true --server.port 8501 --server.address 127.0.0.1
 # 后端
 .venv/bin/python daemon.py
 ```
 
-- 页面：http://localhost:8501
-- 停止：Ctrl-C，或页面点「停止监控」只停抓价循环（daemon 仍待机）。
-
-> ⚠️ 已知安全限制（见 REVISION_NOTES 问题 1）：页面默认监听所有网卡，局域网内可访问。未做 `--server.address 127.0.0.1` 修复前，请勿在不可信网络使用。
+- 页面：http://127.0.0.1:8501（**仅本机可访问**，局域网已不可见）
+- 停止：`./stop_all.sh`，或页面点「停止监控」只停抓价循环（daemon 仍待机）。
 
 ## 五、当前进度（2026-09-02）
 
@@ -62,8 +68,9 @@ cd /Users/Wcg/Desktop/Project_local/海航监控
 - [x] 用户提供 PLUS 抓包 cURL 并导入（`.private/requests/hna-plus.txt`，config.json plus_curl）
 - [x] 绑定 Server酱 SendKey（用户已收到测试消息）
 - [x] **端到端验收通过**：PLUS 端点修正后 daemon 抓到 JD5290/HU7397 各 199 元 → 命中阈值 → 微信已推送（15:20，2 条低价提醒 + 1 条链路验证）
+- [x] **优化批次1 已上线（提交 67086af）**：安全绑定 127.0.0.1、日志/历史轮转、任务级错峰、凭证失败退避、结果分类、价格历史、自适应轮询、可选代理、页面任务启停开关（12/12 测试）
 - [ ] （可选）用户补抓「普通票价」cURL 并导入，开通普通票价监控
-- [ ] 之后再做优化（REVISION_NOTES 第三节清单）
+- [ ] 优化项 7「stime 刷新+重签」：阻塞于签名算法逆向（见 REVISION_NOTES F2），后续专项
 
 ### 关键结论（2026-09-02 排查记录）
 
