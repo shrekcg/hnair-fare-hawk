@@ -1,0 +1,8085 @@
+{
+ "generated_at": "2026-09-02 23:24:46",
+ "query": {
+  "city": "海口",
+  "product": "666",
+  "date": "2026-10-03",
+  "direction": "both",
+  "json": "data/sediment/out/海口_666_20261003.json"
+ },
+ "count": 112,
+ "flights": [
+  {
+   "flight_no": "8L9668",
+   "carrier": "祥鹏航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "成都",
+    "airport": "成都天府国际机场",
+    "iata": "TFU"
+   },
+   "dep_time": "21:35",
+   "arr_time": "00:15",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1334"
+   ]
+  },
+  {
+   "flight_no": "8L9971",
+   "carrier": "祥鹏航空",
+   "origin": {
+    "city": "昆明",
+    "airport": "昆明长水国际机场",
+    "iata": "KMG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "07:00",
+   "arr_time": "09:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "161"
+   ]
+  },
+  {
+   "flight_no": "8L9972",
+   "carrier": "祥鹏航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "昆明",
+    "airport": "昆明长水国际机场",
+    "iata": "KMG"
+   },
+   "dep_time": "20:15",
+   "arr_time": "22:25",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1104"
+   ]
+  },
+  {
+   "flight_no": "8L9973",
+   "carrier": "祥鹏航空",
+   "origin": {
+    "city": "昆明",
+    "airport": "昆明长水国际机场",
+    "iata": "KMG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:00",
+   "arr_time": "21:50",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1029"
+   ]
+  },
+  {
+   "flight_no": "8L9974",
+   "carrier": "祥鹏航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "昆明",
+    "airport": "昆明长水国际机场",
+    "iata": "KMG"
+   },
+   "dep_time": "23:00",
+   "arr_time": "00:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-19",
+     "2026-09-19"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-19",
+     "2026-09-19"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1536"
+   ]
+  },
+  {
+   "flight_no": "9H8325",
+   "carrier": "长安航空",
+   "origin": {
+    "city": "西安",
+    "airport": "西安咸阳国际机场",
+    "iata": "XIY"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "06:35",
+   "arr_time": "11:00",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "54"
+   ]
+  },
+  {
+   "flight_no": "FU6532",
+   "carrier": "福州航空",
+   "origin": {
+    "city": "海口",
+    "airport": "美兰",
+    "iata": ""
+   },
+   "dest": {
+    "city": "福州",
+    "airport": "长乐",
+    "iata": ""
+   },
+   "dep_time": "22:35",
+   "arr_time": "00:40",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "hna",
+   "raw_csv_lines": []
+  },
+  {
+   "flight_no": "GS6453",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "贵阳",
+    "airport": "贵阳龙洞堡国际机场",
+    "iata": "KWE"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:55",
+   "arr_time": "00:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1521"
+   ]
+  },
+  {
+   "flight_no": "GS6454",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "西宁",
+    "airport": "西宁曹家堡国际机场",
+    "iata": "XNN"
+   },
+   "dep_time": "07:15",
+   "arr_time": "12:15",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "241"
+   ]
+  },
+  {
+   "flight_no": "GS6454",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "贵阳",
+    "airport": "贵阳龙洞堡国际机场",
+    "iata": "KWE"
+   },
+   "dep_time": "07:15",
+   "arr_time": "08:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "242"
+   ]
+  },
+  {
+   "flight_no": "GS6527",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "石家庄",
+    "airport": "石家庄正定国际机场",
+    "iata": "SJW"
+   },
+   "dep_time": "07:10",
+   "arr_time": "10:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "223"
+   ]
+  },
+  {
+   "flight_no": "GS6527",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "长春",
+    "airport": "长春龙嘉国际机场",
+    "iata": "CGQ"
+   },
+   "dep_time": "07:10",
+   "arr_time": "13:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "224"
+   ]
+  },
+  {
+   "flight_no": "GS6553",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dep_time": "21:55",
+   "arr_time": "00:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1374"
+   ]
+  },
+  {
+   "flight_no": "GS6554",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:05",
+   "arr_time": "00:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1547"
+   ]
+  },
+  {
+   "flight_no": "GS6556",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "衡阳",
+    "airport": "衡阳南岳机场",
+    "iata": "HNY"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:40",
+   "arr_time": "23:35",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1347"
+   ]
+  },
+  {
+   "flight_no": "GS6568",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "柳州",
+    "airport": "柳州白莲机场",
+    "iata": "LZH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:45",
+   "arr_time": "21:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1200",
+    "1504"
+   ]
+  },
+  {
+   "flight_no": "GS7437",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "遵义",
+    "airport": "遵义新舟机场",
+    "iata": "ZYI"
+   },
+   "dep_time": "07:20",
+   "arr_time": "09:15",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "274"
+   ]
+  },
+  {
+   "flight_no": "GS7437",
+   "carrier": "天津航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "郑州",
+    "airport": "郑州新郑国际机场",
+    "iata": "CGO"
+   },
+   "dep_time": "07:20",
+   "arr_time": "12:05",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "275"
+   ]
+  },
+  {
+   "flight_no": "GX8816",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "淮安",
+    "airport": "淮安涟水国际机场",
+    "iata": "HIA"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "19:55",
+   "arr_time": "00:15",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-12",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-12",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": true,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1005"
+   ]
+  },
+  {
+   "flight_no": "GX8816",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:10",
+   "arr_time": "00:15",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-24",
+     "2026-10-17"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-12",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-12",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.24~10.17",
+   "source": "both",
+   "raw_csv_lines": [
+    "1556"
+   ]
+  },
+  {
+   "flight_no": "GX8871",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "徐州",
+    "airport": "徐州观音国际机场",
+    "iata": "XUZ"
+   },
+   "dep_time": "06:35",
+   "arr_time": "09:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    3,
+    4,
+    5,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-22"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-22"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666"
+   ],
+   "product": "666/2666",
+   "product_conflict": true,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "57"
+   ]
+  },
+  {
+   "flight_no": "GX8872",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "徐州",
+    "airport": "徐州观音国际机场",
+    "iata": "XUZ"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "19:25",
+   "arr_time": "22:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28始",
+   "source": "both",
+   "raw_csv_lines": [
+    "3",
+    "4",
+    "5"
+   ]
+  },
+  {
+   "flight_no": "GX8875",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "张家界",
+    "airport": "张家界荷花国际机场",
+    "iata": "DYG"
+   },
+   "dep_time": "07:00",
+   "arr_time": "09:00",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "179"
+   ]
+  },
+  {
+   "flight_no": "GX8875",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "济南",
+    "airport": "济南遥墙国际机场",
+    "iata": "TNA"
+   },
+   "dep_time": "07:00",
+   "arr_time": "11:50",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-09-05"
+    ],
+    [
+     "2026-09-22",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "180"
+   ]
+  },
+  {
+   "flight_no": "GX8876",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "张家界",
+    "airport": "张家界荷花国际机场",
+    "iata": "DYG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:10",
+   "arr_time": "00:45",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [],
+   "effective_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "csv",
+   "raw_csv_lines": [
+    "1557"
+   ]
+  },
+  {
+   "flight_no": "GX8897",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "蚌埠",
+    "airport": "蚌埠滕湖机场",
+    "iata": "BFU"
+   },
+   "dep_time": "08:00",
+   "arr_time": "10:55",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "483"
+   ]
+  },
+  {
+   "flight_no": "GX8912",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "毕节",
+    "airport": "毕节飞雄机场",
+    "iata": "BFJ"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:45",
+   "arr_time": "00:30",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1498"
+   ]
+  },
+  {
+   "flight_no": "GX8912",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "西安",
+    "airport": "西安咸阳国际机场",
+    "iata": "XIY"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:00",
+   "arr_time": "00:30",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1037"
+   ]
+  },
+  {
+   "flight_no": "GX8915",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "南充",
+    "airport": "南充高坪机场",
+    "iata": "NAO"
+   },
+   "dep_time": "07:15",
+   "arr_time": "09:40",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "250"
+   ]
+  },
+  {
+   "flight_no": "GX8915",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "合肥",
+    "airport": "合肥新桥国际机场",
+    "iata": "HFE"
+   },
+   "dep_time": "07:15",
+   "arr_time": "12:30",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "251"
+   ]
+  },
+  {
+   "flight_no": "GX8931",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "泸州",
+    "airport": "泸州云龙机场",
+    "iata": "LZO"
+   },
+   "dep_time": "19:30",
+   "arr_time": "21:35",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    3,
+    5,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666"
+   ],
+   "product": "666/2666",
+   "product_conflict": true,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1186",
+    "900"
+   ]
+  },
+  {
+   "flight_no": "GX8932",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "泸州",
+    "airport": "泸州云龙机场",
+    "iata": "LZO"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:40",
+   "arr_time": "01:35",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    3,
+    5,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1585"
+   ]
+  },
+  {
+   "flight_no": "GX8980",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "万州",
+    "airport": "万州五桥机场",
+    "iata": "WXN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:30",
+   "arr_time": "00:50",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1467"
+   ]
+  },
+  {
+   "flight_no": "GX8992",
+   "carrier": "北部湾航空",
+   "origin": {
+    "city": "信阳",
+    "airport": "信阳明港机场",
+    "iata": "XAI"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:05",
+   "arr_time": "00:40",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1401"
+   ]
+  },
+  {
+   "flight_no": "HU7001",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dep_time": "07:40",
+   "arr_time": "09:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [],
+   "csv_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [],
+   "effective_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.24始",
+   "source": "csv",
+   "raw_csv_lines": [
+    "387"
+   ]
+  },
+  {
+   "flight_no": "HU7002",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "06:45",
+   "arr_time": "08:15",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [],
+   "csv_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [],
+   "effective_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.24始",
+   "source": "csv",
+   "raw_csv_lines": [
+    "95"
+   ]
+  },
+  {
+   "flight_no": "HU7004",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "07:50",
+   "arr_time": "09:25",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [],
+   "effective_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "csv",
+   "raw_csv_lines": [
+    "429"
+   ]
+  },
+  {
+   "flight_no": "HU7010",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:30",
+   "arr_time": "21:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1170"
+   ]
+  },
+  {
+   "flight_no": "HU7011",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dep_time": "22:30",
+   "arr_time": "00:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1468"
+   ]
+  },
+  {
+   "flight_no": "HU7012",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "广州",
+    "airport": "广州白云国际机场",
+    "iata": "CAN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:40",
+   "arr_time": "00:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1491"
+   ]
+  },
+  {
+   "flight_no": "HU7017",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dep_time": "07:20",
+   "arr_time": "08:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-25",
+     "2026-10-09"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-25",
+     "2026-10-09"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-25",
+     "2026-10-09"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.25~10.9",
+   "source": "both",
+   "raw_csv_lines": [
+    "281",
+    "574"
+   ]
+  },
+  {
+   "flight_no": "HU7019",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dep_time": "21:25",
+   "arr_time": "22:35",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "1310"
+   ]
+  },
+  {
+   "flight_no": "HU7020",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:35",
+   "arr_time": "01:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "1580"
+   ]
+  },
+  {
+   "flight_no": "HU7021",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dep_time": "06:30",
+   "arr_time": "07:45",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "40"
+   ]
+  },
+  {
+   "flight_no": "HU7022",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "08:50",
+   "arr_time": "10:15",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": true,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "704"
+   ]
+  },
+  {
+   "flight_no": "HU7023",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dep_time": "06:40",
+   "arr_time": "07:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "78"
+   ]
+  },
+  {
+   "flight_no": "HU7026",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:35",
+   "arr_time": "22:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1188"
+   ]
+  },
+  {
+   "flight_no": "HU7027",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dep_time": "21:35",
+   "arr_time": "23:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1340"
+   ]
+  },
+  {
+   "flight_no": "HU7028",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:10",
+   "arr_time": "00:35",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1558"
+   ]
+  },
+  {
+   "flight_no": "HU7031",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "郑州",
+    "airport": "郑州新郑国际机场",
+    "iata": "CGO"
+   },
+   "dep_time": "07:55",
+   "arr_time": "11:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-28",
+     "2026-10-19"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-24",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-28",
+     "2026-10-19"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28始",
+   "source": "both",
+   "raw_csv_lines": [
+    "455",
+    "575"
+   ]
+  },
+  {
+   "flight_no": "HU7036",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "郑州",
+    "airport": "郑州新郑国际机场",
+    "iata": "CGO"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:00",
+   "arr_time": "00:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1237"
+   ]
+  },
+  {
+   "flight_no": "HU7038",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "合肥",
+    "airport": "合肥新桥国际机场",
+    "iata": "HFE"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:40",
+   "arr_time": "23:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1194"
+   ]
+  },
+  {
+   "flight_no": "HU7039",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "呼和浩特",
+    "airport": "呼和浩特白塔国际机场",
+    "iata": "HET"
+   },
+   "dep_time": "07:10",
+   "arr_time": "13:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "229"
+   ]
+  },
+  {
+   "flight_no": "HU7039",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "贵阳",
+    "airport": "贵阳龙洞堡国际机场",
+    "iata": "KWE"
+   },
+   "dep_time": "07:10",
+   "arr_time": "09:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "230"
+   ]
+  },
+  {
+   "flight_no": "HU7046",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:10",
+   "arr_time": "22:25",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1273"
+   ]
+  },
+  {
+   "flight_no": "HU7047",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "厦门",
+    "airport": "厦门高崎国际机场",
+    "iata": "XMN"
+   },
+   "dep_time": "07:20",
+   "arr_time": "09:25",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "282"
+   ]
+  },
+  {
+   "flight_no": "HU7047",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "沈阳",
+    "airport": "沈阳桃仙国际机场",
+    "iata": "SHE"
+   },
+   "dep_time": "07:20",
+   "arr_time": "13:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "283"
+   ]
+  },
+  {
+   "flight_no": "HU7050",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "贵阳",
+    "airport": "贵阳龙洞堡国际机场",
+    "iata": "KWE"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:15",
+   "arr_time": "23:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "1435"
+   ]
+  },
+  {
+   "flight_no": "HU7060",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "荆州",
+    "airport": "荆州沙市机场",
+    "iata": "SHS"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:50",
+   "arr_time": "00:05",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1363"
+   ]
+  },
+  {
+   "flight_no": "HU7062",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "武汉",
+    "airport": "武汉天河国际机场",
+    "iata": "WUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:00",
+   "arr_time": "23:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1238"
+   ]
+  },
+  {
+   "flight_no": "HU7064",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "武汉",
+    "airport": "武汉天河国际机场",
+    "iata": "WUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:30",
+   "arr_time": "01:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-15",
+     "2026-09-22"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-15",
+     "2026-09-22"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1469"
+   ]
+  },
+  {
+   "flight_no": "HU7070",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "南昌",
+    "airport": "南昌昌北国际机场",
+    "iata": "KHN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:30",
+   "arr_time": "00:50",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1470"
+   ]
+  },
+  {
+   "flight_no": "HU7073",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "哈尔滨",
+    "airport": "哈尔滨太平国际机场",
+    "iata": "HRB"
+   },
+   "dep_time": "07:20",
+   "arr_time": "12:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-04",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-04",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "284"
+   ]
+  },
+  {
+   "flight_no": "HU7075",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "福州",
+    "airport": "福州长乐国际机场",
+    "iata": "FOC"
+   },
+   "dep_time": "07:50",
+   "arr_time": "09:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-07",
+     "2026-10-19"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-07",
+     "2026-10-19"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "430",
+    "547"
+   ]
+  },
+  {
+   "flight_no": "HU7085",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "成都",
+    "airport": "成都天府国际机场",
+    "iata": "TFU"
+   },
+   "dep_time": "20:00",
+   "arr_time": "22:25",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-26",
+     "2026-10-09"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-26",
+     "2026-10-09"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-26",
+     "2026-10-09"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.26~10.9",
+   "source": "both",
+   "raw_csv_lines": [
+    "1041"
+   ]
+  },
+  {
+   "flight_no": "HU7095",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "南宁",
+    "airport": "南宁吴圩国际机场",
+    "iata": "NNG"
+   },
+   "dep_time": "21:30",
+   "arr_time": "22:35",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1323"
+   ]
+  },
+  {
+   "flight_no": "HU7096",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "南宁",
+    "airport": "南宁吴圩国际机场",
+    "iata": "NNG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "23:50",
+   "arr_time": "01:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1592"
+   ]
+  },
+  {
+   "flight_no": "HU7098",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "延安",
+    "airport": "延安南泥湾机场",
+    "iata": "ENY"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:05",
+   "arr_time": "23:20",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1078"
+   ]
+  },
+  {
+   "flight_no": "HU7121",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "太原",
+    "airport": "太原武宿国际机场",
+    "iata": "TYN"
+   },
+   "dep_time": "08:00",
+   "arr_time": "10:50",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "484"
+   ]
+  },
+  {
+   "flight_no": "HU7171",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dep_time": "07:30",
+   "arr_time": "09:50",
+   "days": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-04",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-04",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "323"
+   ]
+  },
+  {
+   "flight_no": "HU7172",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "07:50",
+   "arr_time": "10:00",
+   "days": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-04",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-04",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "431"
+   ]
+  },
+  {
+   "flight_no": "HU7181",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "北京",
+    "airport": "北京首都国际机场",
+    "iata": "PEK"
+   },
+   "dep_time": "08:00",
+   "arr_time": "11:45",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "487"
+   ]
+  },
+  {
+   "flight_no": "HU7217",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "长沙",
+    "airport": "长沙黄花国际机场",
+    "iata": "CSX"
+   },
+   "dep_time": "21:00",
+   "arr_time": "23:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1240"
+   ]
+  },
+  {
+   "flight_no": "HU7218",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "长沙",
+    "airport": "长沙黄花国际机场",
+    "iata": "CSX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "08:00",
+   "arr_time": "10:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "488"
+   ]
+  },
+  {
+   "flight_no": "HU7272",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:20",
+   "arr_time": "23:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1300"
+   ]
+  },
+  {
+   "flight_no": "HU7282",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "北京",
+    "airport": "北京首都国际机场",
+    "iata": "PEK"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:00",
+   "arr_time": "01:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-24",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-24",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-24",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.24~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "1241"
+   ]
+  },
+  {
+   "flight_no": "HU7365",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "西安",
+    "airport": "西安咸阳国际机场",
+    "iata": "XIY"
+   },
+   "dep_time": "20:55",
+   "arr_time": "00:05",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-28",
+     "2026-10-10"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.28~10.10",
+   "source": "both",
+   "raw_csv_lines": [
+    "1226"
+   ]
+  },
+  {
+   "flight_no": "HU7369",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "九江",
+    "airport": "九江庐山机场",
+    "iata": "JIU"
+   },
+   "dep_time": "07:40",
+   "arr_time": "09:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "390"
+   ]
+  },
+  {
+   "flight_no": "HU7382",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "北京",
+    "airport": "北京首都国际机场",
+    "iata": "PEK"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "08:00",
+   "arr_time": "11:45",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "492"
+   ]
+  },
+  {
+   "flight_no": "HU7418",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "长沙",
+    "airport": "长沙黄花国际机场",
+    "iata": "CSX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:00",
+   "arr_time": "23:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1242"
+   ]
+  },
+  {
+   "flight_no": "HU7419",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "兰州",
+    "airport": "兰州中川国际机场",
+    "iata": "LHW"
+   },
+   "dep_time": "06:55",
+   "arr_time": "11:40",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "128"
+   ]
+  },
+  {
+   "flight_no": "HU7419",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "陇南",
+    "airport": "陇南成县机场",
+    "iata": "LNL"
+   },
+   "dep_time": "06:55",
+   "arr_time": "09:40",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "129"
+   ]
+  },
+  {
+   "flight_no": "HU7518",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "乌鲁木齐",
+    "airport": "乌鲁木齐天山国际机场",
+    "iata": "URC"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "07:55",
+   "arr_time": "15:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "464"
+   ]
+  },
+  {
+   "flight_no": "HU7565",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "柳州",
+    "airport": "柳州白莲机场",
+    "iata": "LZH"
+   },
+   "dep_time": "20:10",
+   "arr_time": "21:25",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1090"
+   ]
+  },
+  {
+   "flight_no": "HU7565",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "西安",
+    "airport": "西安咸阳国际机场",
+    "iata": "XIY"
+   },
+   "dep_time": "20:10",
+   "arr_time": "00:25",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1091"
+   ]
+  },
+  {
+   "flight_no": "HU7566",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "柳州",
+    "airport": "柳州白莲机场",
+    "iata": "LZH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:40",
+   "arr_time": "00:05",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1492"
+   ]
+  },
+  {
+   "flight_no": "HU7581",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "北京",
+    "airport": "北京首都国际机场",
+    "iata": "PEK"
+   },
+   "dep_time": "21:00",
+   "arr_time": "00:40",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1244"
+   ]
+  },
+  {
+   "flight_no": "HU7653",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "泉州",
+    "airport": "泉州晋江国际机场",
+    "iata": "JJN"
+   },
+   "dep_time": "19:40",
+   "arr_time": "21:40",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-21"
+    ],
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-21"
+    ],
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1052",
+    "945"
+   ]
+  },
+  {
+   "flight_no": "HU7654",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "泉州",
+    "airport": "泉州晋江国际机场",
+    "iata": "JJN"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:40",
+   "arr_time": "00:45",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-23"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1493"
+   ]
+  },
+  {
+   "flight_no": "HU7687",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "宁波",
+    "airport": "宁波栎社国际机场",
+    "iata": "NGB"
+   },
+   "dep_time": "07:10",
+   "arr_time": "09:45",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "231"
+   ]
+  },
+  {
+   "flight_no": "HU7687",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "青岛",
+    "airport": "青岛胶东国际机场",
+    "iata": "TAO"
+   },
+   "dep_time": "07:10",
+   "arr_time": "12:30",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "232"
+   ]
+  },
+  {
+   "flight_no": "HU785",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "重庆",
+    "airport": "江北",
+    "iata": ""
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "美兰",
+    "iata": ""
+   },
+   "dep_time": "21:55",
+   "arr_time": "00:25",
+   "days": [
+    4,
+    6
+   ],
+   "days_csv": [],
+   "days_hna": [
+    4,
+    6
+   ],
+   "csv_dates": [],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "hna",
+   "raw_csv_lines": []
+  },
+  {
+   "flight_no": "HU786",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "美兰",
+    "iata": ""
+   },
+   "dest": {
+    "city": "重庆",
+    "airport": "江北",
+    "iata": ""
+   },
+   "dep_time": "07:30",
+   "arr_time": "09:40",
+   "days": [
+    1,
+    6
+   ],
+   "days_csv": [],
+   "days_hna": [
+    1,
+    6
+   ],
+   "csv_dates": [],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "hna",
+   "raw_csv_lines": []
+  },
+  {
+   "flight_no": "HU7971",
+   "carrier": "海南航空",
+   "origin": {
+    "city": "海口",
+    "airport": "美兰",
+    "iata": ""
+   },
+   "dest": {
+    "city": "重庆",
+    "airport": "江北",
+    "iata": ""
+   },
+   "dep_time": "21:10",
+   "arr_time": "23:25",
+   "days": [
+    6
+   ],
+   "days_csv": [],
+   "days_hna": [
+    6
+   ],
+   "csv_dates": [],
+   "hna_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-05",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "hna",
+   "raw_csv_lines": []
+  },
+  {
+   "flight_no": "JD5015",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dep_time": "19:30",
+   "arr_time": "21:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.30~10.7",
+   "source": "both",
+   "raw_csv_lines": [
+    "1134",
+    "908"
+   ]
+  },
+  {
+   "flight_no": "JD5016",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "珠海",
+    "airport": "珠海金湾机场",
+    "iata": "ZUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:55",
+   "arr_time": "23:00",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.29~10.8",
+   "source": "both",
+   "raw_csv_lines": [
+    "1379"
+   ]
+  },
+  {
+   "flight_no": "JD5037",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "广元",
+    "airport": "广元盘龙机场",
+    "iata": "GYS"
+   },
+   "dep_time": "06:25",
+   "arr_time": "09:00",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.29~10.8",
+   "source": "both",
+   "raw_csv_lines": [
+    "29"
+   ]
+  },
+  {
+   "flight_no": "JD5037",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "石家庄",
+    "airport": "石家庄正定国际机场",
+    "iata": "SJW"
+   },
+   "dep_time": "06:25",
+   "arr_time": "11:50",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.29~10.8",
+   "source": "both",
+   "raw_csv_lines": [
+    "30"
+   ]
+  },
+  {
+   "flight_no": "JD5155",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "南京",
+    "airport": "南京禄口国际机场",
+    "iata": "NKG"
+   },
+   "dep_time": "06:45",
+   "arr_time": "11:05",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "97"
+   ]
+  },
+  {
+   "flight_no": "JD5155",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "郴州",
+    "airport": "郴州北湖机场",
+    "iata": "HCZ"
+   },
+   "dep_time": "06:45",
+   "arr_time": "08:20",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "98"
+   ]
+  },
+  {
+   "flight_no": "JD5330",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "武汉",
+    "airport": "武汉天河国际机场",
+    "iata": "WUH"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:25",
+   "arr_time": "01:15",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1461"
+   ]
+  },
+  {
+   "flight_no": "JD5376",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "郑州",
+    "airport": "郑州新郑国际机场",
+    "iata": "CGO"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "22:35",
+   "arr_time": "01:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.29~10.8",
+   "source": "both",
+   "raw_csv_lines": [
+    "1480"
+   ]
+  },
+  {
+   "flight_no": "JD5538",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "西安",
+    "airport": "西安咸阳国际机场",
+    "iata": "XIY"
+   },
+   "dep_time": "20:20",
+   "arr_time": "01:20",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-08",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-08",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1140"
+   ]
+  },
+  {
+   "flight_no": "JD5538",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "韶关",
+    "airport": "韶关丹霞机场",
+    "iata": "HSC"
+   },
+   "dep_time": "20:20",
+   "arr_time": "21:45",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-08",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-08",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1141"
+   ]
+  },
+  {
+   "flight_no": "JD5585",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "贵阳",
+    "airport": "贵阳龙洞堡国际机场",
+    "iata": "KWE"
+   },
+   "dep_time": "07:05",
+   "arr_time": "08:40",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-29",
+     "2026-10-08"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.29~10.8",
+   "source": "both",
+   "raw_csv_lines": [
+    "208"
+   ]
+  },
+  {
+   "flight_no": "JD5596",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "济南",
+    "airport": "济南遥墙国际机场",
+    "iata": "TNA"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "21:35",
+   "arr_time": "01:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1344"
+   ]
+  },
+  {
+   "flight_no": "JD5763",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "临沂",
+    "airport": "临沂启阳机场",
+    "iata": "LYI"
+   },
+   "dep_time": "08:00",
+   "arr_time": "12:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-09-26"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-05",
+     "2026-09-26"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-05",
+     "2026-09-26"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": "9.26止",
+   "source": "both",
+   "raw_csv_lines": [
+    "500",
+    "680"
+   ]
+  },
+  {
+   "flight_no": "JD5763",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "桂林",
+    "airport": "桂林两江国际机场",
+    "iata": "KWL"
+   },
+   "dep_time": "08:00",
+   "arr_time": "09:20",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-09-26"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-02",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666"
+   ],
+   "product": "666/2666",
+   "product_conflict": true,
+   "notes": "9.26止",
+   "source": "both",
+   "raw_csv_lines": [
+    "501",
+    "681"
+   ]
+  },
+  {
+   "flight_no": "JD5974",
+   "carrier": "首都航空",
+   "origin": {
+    "city": "深圳",
+    "airport": "深圳宝安国际机场",
+    "iata": "SZX"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "20:55",
+   "arr_time": "22:25",
+   "days": [
+    4,
+    6
+   ],
+   "days_csv": [
+    4,
+    6
+   ],
+   "days_hna": [
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ],
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1232",
+    "1570"
+   ]
+  },
+  {
+   "flight_no": "PN6207",
+   "carrier": "西部航空",
+   "origin": {
+    "city": "重庆",
+    "airport": "重庆江北国际机场",
+    "iata": "CKG"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "06:55",
+   "arr_time": "09:10",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-04",
+     "2026-09-04"
+    ],
+    [
+     "2026-09-26",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-04",
+     "2026-09-04"
+    ],
+    [
+     "2026-09-26",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "138"
+   ]
+  },
+  {
+   "flight_no": "PN6330",
+   "carrier": "西部航空",
+   "origin": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dest": {
+    "city": "郑州",
+    "airport": "郑州新郑国际机场",
+    "iata": "CGO"
+   },
+   "dep_time": "23:05",
+   "arr_time": "01:55",
+   "days": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_csv": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "days_hna": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-26",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-26",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "1551"
+   ]
+  },
+  {
+   "flight_no": "UQ3512",
+   "carrier": "乌鲁木齐航空",
+   "origin": {
+    "city": "乌鲁木齐",
+    "airport": "乌鲁木齐天山国际机场",
+    "iata": "URC"
+   },
+   "dest": {
+    "city": "海口",
+    "airport": "海口美兰国际机场",
+    "iata": "HAK"
+   },
+   "dep_time": "07:50",
+   "arr_time": "15:35",
+   "days": [
+    2,
+    4,
+    6
+   ],
+   "days_csv": [
+    2,
+    4,
+    6
+   ],
+   "days_hna": [
+    2,
+    4,
+    6
+   ],
+   "csv_dates": [
+    [
+     "2026-09-01",
+     "2026-10-24"
+    ]
+   ],
+   "hna_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "effective_dates": [
+    [
+     "2026-09-03",
+     "2026-10-24"
+    ]
+   ],
+   "csv_products": [
+    "2666",
+    "666"
+   ],
+   "hna_products": [
+    "2666",
+    "666"
+   ],
+   "product": "666/2666",
+   "product_conflict": false,
+   "notes": null,
+   "source": "both",
+   "raw_csv_lines": [
+    "440"
+   ]
+  }
+ ]
+}

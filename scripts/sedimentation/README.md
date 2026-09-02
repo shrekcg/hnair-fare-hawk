@@ -15,10 +15,16 @@
 # 1) 两源对比校验（输出控制台摘要 + data/sediment/reports/latest_compare.json）
 .venv/bin/python scripts/sedimentation/compare.py
 
-# 2) 单源解析验证（可选）
-.venv/bin/python scripts/sedimentation/load_sxfroute.py
-.venv/bin/python scripts/sedimentation/load_hna666.py
+# 2) 构建规范化全量数据快照（data/sediment/flights_normalized.json）
+.venv/bin/python scripts/sedimentation/build_normalized.py
+
+# 3) 查询某城市可飞航班（666/2666 档位、指定日期、方向过滤）
+.venv/bin/python scripts/sedimentation/query.py 海口 --product 666
+.venv/bin/python scripts/sedimentation/query.py 海口 --date 2026-09-15 --json data/sediment/out/海口_666_20260915.json
 ```
+
+查询规则：`--product 666` 返回档位含 666 的航班（666/2666 双档，因为 666 卡能飞）；
+`--date` 校验落在 effective_dates 且当天班期包含该日星期；`--json` 输出清单文件（第 5 阶段与实时监控联动用）。
 
 ## 统一 schema（Flight）
 
@@ -30,6 +36,13 @@
 - HNA666 的产品由文件名推导；`66666.html` 记为 `666/2666` 但**只是全量底册，不代表可兑档位**（对比时单独统计）。
 - HNA666 多航段记录（ticketable_segments 多个）拆分一条航段一条 Flight，与 CSV 一行一航段对齐。
 - 跨源主键：`(航班号, 出港城市, 到港城市)`——城市级对齐，机场名书写差异不影响。
+
+## 规范化快照（flights_normalized.json）
+
+1733 条（2026 秋航季），每条含两源独立视角 + 合并视角：
+- `csv_products` / `hna_products` / `product`（并集，"宁多勿漏"）/ `product_conflict`（两源档位判定不同，当前 **44 条**，人工复核重点）
+- `csv_dates`（CSV 全季日期按备注修正："仅9.9"/"9.28始"/"10.8止"/"9.28~10.9" 等）/ `hna_dates`（HNA666 实际执飞日期）/ `effective_dates`（HNA666 优先、CSV 备注修正兜底）
+- `source`：both=两源都有(1455) / csv=仅 CSV(65) / hna=仅 HNA666 可兑(213)
 
 ## 对比维度与当前基线（2026-09-02 首跑，秋航季 09-01~10-24）
 
