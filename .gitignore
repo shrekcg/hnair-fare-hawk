@@ -36,3 +36,7 @@ Thumbs.db
 web_stdout.log
 # 价格历史
 price_history.jsonl
+
+# 前端（web/）构建产物与依赖，start_all.sh 会自动 pnpm build
+web/node_modules/
+web/dist/

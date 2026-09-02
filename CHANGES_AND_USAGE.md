@@ -12,7 +12,8 @@
 | `67086af` | **优化批次1**（9 项，见下节） | `daemon.py`、`fetcher.py`、`state.py`、`app.py`、`start_all.sh`、`stop_all.sh` | 使用方式基本不变，安全性/稳定性提升 |
 | `b54c99d` | 文档：更新进度与启动方式 | `PROJECT_NOTES.md` | 无（文档） |
 | `e3a14dd` | 文档：记录普通票价实测结论（F4） | `REVISION_NOTES.md`、`PROJECT_NOTES.md` | 无（文档） |
-| 本次 | **票据管理入口**：Web 侧边栏新增「票据管理」，可自行粘贴/保存 PLUS 与普通票据 | `app.py` | ✅ 新增能力：改/加票据不再需要动命令行 |
+| `3d2082b` | **签名算法对齐官方**（`_makeSign` 逆向）+ stime 刷新重签兜底 | `backend/fetcher.py`、`config.example.json`、`app.py`、`tests/test_fetcher.py` | 默认零变化；`sign_refresh` 可选项 |
+| 本次 | **控制台 UI 重写**：Streamlit → React+Vite（顶部导航+卡片+Tab），API 层为 `web_api.py` | `web/`（新）、`web_api.py`（新）、`start_all.sh`、`stop_all.sh`、`tests/test_web_api.py` | 界面焕新；发送测试消息改为用已保存的 SendKey；空 SendKey 不再覆盖旧值 |
 
 ### 优化批次1 明细（`67086af`）
 
