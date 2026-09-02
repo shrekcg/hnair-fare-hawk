@@ -55,9 +55,9 @@ function Overview({ data, onGo, onToggleStatus }) {
 
   return (
     <div>
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} align="stretch">
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card">
             <Statistic
               title="监控状态"
               value={running ? '运行中' : '已停止'}
@@ -67,6 +67,7 @@ function Overview({ data, onGo, onToggleStatus }) {
             <Button
               type={running ? 'default' : 'primary'}
               icon={running ? <PoweroffOutlined /> : undefined}
+              style={{ marginTop: 'auto' }}
               onClick={onToggleStatus}
             >
               {running ? '停止监控' : '启动监控'}
@@ -74,23 +75,24 @@ function Overview({ data, onGo, onToggleStatus }) {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card">
             <Statistic title="监控任务" value={stats.task_count} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>启用 {stats.enabled_count} 个</div>
-            <Button type="link" style={{ paddingLeft: 0 }} onClick={() => onGo('tasks')}>管理任务</Button>
+            <Button type="link" style={{ paddingLeft: 0, marginTop: 'auto' }} onClick={() => onGo('tasks')}>管理任务</Button>
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card">
             <Statistic title="近 24h 命中" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>价格 ≤ 目标价的记录数</div>
+            <div className="stat-card-footer" />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card">
             <Statistic title="历史记录" value={stats.history_count} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>最近 50 条可查</div>
-            <Button type="link" style={{ paddingLeft: 0 }} onClick={() => onGo('history')}>查看历史</Button>
+            <Button type="link" style={{ paddingLeft: 0, marginTop: 'auto' }} onClick={() => onGo('history')}>查看历史</Button>
           </Card>
         </Col>
       </Row>
@@ -811,7 +813,6 @@ export default function App() {
                 <span className="status-dot" style={{ background: data.config.status === 'running' ? '#52c41a' : '#bfbfbf' }} />
                 {data.config.status === 'running' ? '监控运行中' : '监控已停止'}
               </Tag>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setTab('tasks')}>添加任务</Button>
             </Space>
           </Col>
         </Row>
