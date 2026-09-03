@@ -224,6 +224,50 @@ def test_feishu_message_missing_config_no_network():
     assert ok is False
     assert "不完整" in err
 
+def test_add_task_plus_forces_199(api_server):
+    """PLUS 专享任务强制 199 阈值，忽略用户自定义价格。"""
+    base, tmp = api_server
+    # 先配置一个 PLUS 票据（否则 _post_task 会因缺少票据拒绝 plus 任务）
+    curl = "curl 'https://app.hnair.com/ticket/lfs/airLowFareSearch?token=T&hnairSign=S' -H 'x: y' --data-raw '{}'"
+    r = requests.post(f"{base}/api/ticket", json={"fare_type": "plus", "raw": curl}, timeout=5)
+    assert r.json()["ok"] is True
+
+    r = requests.post(
+        f"{base}/api/tasks",
+        json={"date": "2026-09-25", "from_city": "深圳", "to_city": "杭州", "target_price": 999, "fare_type": "plus"},
+        timeout=5,
+    )
+    assert r.status_code == 200
+    tasks = json.loads((tmp / "tasks.json").read_text(encoding="utf-8"))["tasks"]
+    assert tasks[0]["fare_type"] == "plus"
+    assert tasks[0]["target_price"] == 199
+
+
+def test_add_task_normal_keeps_custom_threshold(api_server):
+    """普通票价任务保留用户设置的自定义阈值。"""
+    base, tmp = api_server
+    r = requests.post(
+        f"{base}/api/tasks",
+        json={"date": "2026-09-25", "from_city": "深圳", "to_city": "杭州", "target_price": 350, "fare_type": "normal"},
+        timeout=5,
+    )
+    assert r.status_code == 200
+    tasks = json.loads((tmp / "tasks.json").read_text(encoding="utf-8"))["tasks"]
+    assert tasks[0]["target_price"] == 350
+
+
+def test_clear_log_archives(api_server):
+    base, tmp = api_server
+    log = tmp / "run_log.txt"
+    log.write_text("line1\nline2\n", encoding="utf-8")
+
+    r = requests.post(f"{base}/api/log/clear", json={}, timeout=5)
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+    assert (tmp / "run_log.txt.bak").exists()
+    assert log.stat().st_size == 0
+
+
 def test_expand_dates():
     """daemon 日期区间展开逻辑。"""
     from daemon import expand_dates
@@ -242,3 +286,141 @@ def test_expand_dates():
     assert expand_dates({"date": "not-a-date", "date_end": "2026-09-20"}) == ["not-a-date"]
     # 空任务
     assert expand_dates({}) == []
+
+
+def test_flights_options_linkage(api_server):
+    """/api/flights/options 出发/到达联动：查深圳出发到达下拉应有杭州。"""
+    base, _ = api_server
+    r = requests.get(f"{base}/api/flights/options?from=深圳", timeout=5)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert "深圳（SZX）" in "".join(body["from_options"])
+    assert "杭州（HGH）" in "".join(body["to_options"])
+    # 反向：到杭州时出发应有深圳
+    r2 = requests.get(f"{base}/api/flights/options?to=杭州", timeout=5)
+    assert "深圳（SZX）" in "".join(r2.json()["from_options"])
+    # 档位过滤
+    r3 = requests.get(f"{base}/api/flights/options?from=深圳&to=杭州&product=2666", timeout=5)
+    assert r3.status_code == 200
+
+
+def test_tasks_batch_create_and_state_grouped(api_server):
+    """批量建任务：state 按航线分组，返回 ids/dates/档位/目的地机场。"""
+    base, tmp = api_server
+    payload = {"items": [
+        {
+            "from_code": "深圳",
+            "to_code": "杭州",
+            "dates": ["2026-09-20", "2026-09-21"],
+            "product": "666",
+            "flight_no": "HU1234",
+            "dep_time": "08:00",
+            "arr_time": "10:00",
+        },
+        {
+            "from_code": "深圳",
+            "to_code": "上海",
+            "dates": ["2026-09-22"],
+            "product": "2666",
+        },
+    ]}
+    r = requests.post(f"{base}/api/tasks/batch", json=payload, timeout=5)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ok"] is True
+    assert body["created"] == 2
+    assert body["merged"] == 0
+
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    rows = {row["from_code"] + "|" + row["to_code"]: row for row in state["tasks"]}
+    assert "SZX|HGH" in rows and "SZX|PVG" in rows
+    szx_hgh = rows["SZX|HGH"]
+    assert szx_hgh["dates"] == ["2026-09-20", "2026-09-21"]
+    assert szx_hgh["product"] == "666"
+    assert szx_hgh["flight_no"] == "HU1234"
+    assert szx_hgh["target_price"] == 199
+    assert szx_hgh["fare_type"] == "plus"
+    assert szx_hgh["enabled"] is True
+    assert len(szx_hgh["ids"]) == 1
+    assert szx_hgh["from_city"] == "深圳"
+    assert szx_hgh["to_city"] == "杭州"
+    assert szx_hgh["to_airport"]  # 机场全称非空
+
+
+def test_tasks_batch_merge_same_route(api_server):
+    """同航线再次批量建任务：日期/档位并入已有任务（merged）。"""
+    base, tmp = api_server
+    first = {"items": [{"from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20"], "product": "666"}]}
+    r = requests.post(f"{base}/api/tasks/batch", json=first, timeout=5)
+    assert r.json()["created"] == 1
+
+    second = {"items": [{"from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-22", "2026-09-23"], "product": "2666"}]}
+    r = requests.post(f"{base}/api/tasks/batch", json=second, timeout=5)
+    body = r.json()
+    assert body["ok"] is True
+    assert body["created"] == 0
+    assert body["merged"] == 1
+
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    row = [x for x in state["tasks"] if x["from_code"] == "SZX" and x["to_code"] == "HGH"][0]
+    assert row["dates"] == ["2026-09-20", "2026-09-22", "2026-09-23"]
+    assert set(row["product"].split("/")) == {"666", "2666"}
+    assert len(row["ids"]) == 1  # 仍然是一条底层任务
+
+
+def test_tasks_batch_rejects_missing_dates(api_server):
+    """批量建任务缺监控日期时 400 报错。"""
+    base, _ = api_server
+    r = requests.post(f"{base}/api/tasks/batch", json={"items": [{"from_code": "SZX", "to_code": "HGH"}]}, timeout=5)
+    assert r.status_code == 400
+    assert r.json()["ok"] is False
+    assert r.json()["error"] == "没有可创建的任务。"
+    assert any("缺少监控日期" in e for e in r.json()["errors"])
+
+
+def test_tasks_delete_ids(api_server):
+    """按 ids 数组删除分组行。"""
+    base, tmp = api_server
+    r = requests.post(f"{base}/api/tasks/batch", json={"items": [
+        {"from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20"]},
+        {"from_code": "SZX", "to_code": "PVG", "dates": ["2026-09-21"]},
+    ]}, timeout=5)
+    assert r.json()["created"] == 2
+
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    ids = [x["ids"][0] for x in state["tasks"]]
+    r = requests.post(f"{base}/api/tasks/delete", json={"ids": [ids[0]]}, timeout=5)
+    assert r.json()["ok"] is True
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert len(state["tasks"]) == 1
+    assert state["tasks"][0]["ids"] == [ids[1]]
+    # 空 ids 拒绝
+    r = requests.post(f"{base}/api/tasks/delete", json={}, timeout=5)
+    assert r.status_code == 400
+
+
+def test_tasks_enabled_ids(api_server):
+    """按 ids 数组批量启停；enabled=any 分组语义。"""
+    base, tmp = api_server
+    payload = {"items": [
+        {"from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20"]},
+        {"from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-21"], "product": "2666"},
+    ]}
+    r = requests.post(f"{base}/api/tasks/batch", json=payload, timeout=5)
+    assert r.json()["created"] == 1
+    assert r.json()["merged"] == 1
+    # 两条同航线被合并成一条底层任务（batch 内部合并）
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    row = state["tasks"][0]
+    assert row["from_code"] == "SZX" and row["to_code"] == "HGH"
+    assert len(row["ids"]) == 1
+    # 停用该分组
+    r = requests.post(f"{base}/api/tasks/enabled", json={"ids": row["ids"], "enabled": False}, timeout=5)
+    assert r.json()["ok"] is True
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert state["tasks"][0]["enabled"] is False
+    # 重新启用
+    r = requests.post(f"{base}/api/tasks/enabled", json={"ids": row["ids"], "enabled": True}, timeout=5)
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert state["tasks"][0]["enabled"] is True

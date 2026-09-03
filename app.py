@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
-from datetime import date, datetime, time as dt_time
+from datetime import date, datetime, time as dt_time, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -41,11 +42,23 @@ DEFAULT_CONFIG = {
     "plus_curl": "",
     "proxy": "",
     "sign_refresh": False,
+    # 实时查价（海航接口）：enabled 为总开关（被风控时可随时关掉，关后 web 查价与 daemon 均跳过）；
+    # min_interval 为全局查询最小间隔（秒），防手动连点触发风控。
+    "price_query": {"enabled": True, "min_interval": 8},
     # 通知渠道：飞书（企业自建应用机器人）。app_secret 仅在保存时写入，任何接口不回传。
     "feishu": {"app_id": "", "app_secret": "", "receiver": ""},
+    # 多通道通知：urgent_enabled=全局加急开关（默认开）；各渠道凭证为空即未启用
+    "notify_channels": {
+        "urgent_enabled": True,
+        "wecom": {"enabled": False, "corp_id": "", "agent_id": "", "secret": "", "user_id": ""},
+        "dingtalk": {"enabled": False, "webhook": "", "secret": ""},
+        "bark": {"enabled": False, "device_key": "", "server": "https://api.day.app"},
+        "ntfy": {"enabled": False, "topic": "", "server": "https://ntfy.sh"},
+    },
 }
 DEFAULT_TASKS = {"tasks": []}
 DEFAULT_STATE = {"price_alerts": {}, "token_alert": {"last_ts": 0}}
+NOTIFY_HISTORY_PATH = BASE_DIR / "notification_history.jsonl"
 
 
 def _read_json(path: Path, default: Dict[str, Any]) -> Dict[str, Any]:
@@ -109,6 +122,23 @@ def save_send_keys(raw: str) -> None:
     _write_json(CONFIG_PATH, config)
 
 
+def _norm_cabins(cabins: Any) -> List[str]:
+    """归一化舱位白名单：接受列表或逗号分隔字符串，统一大写、去空、去重。"""
+    if isinstance(cabins, str):
+        raw_list = [c.strip() for c in cabins.split(",")]
+    elif isinstance(cabins, (list, tuple)):
+        raw_list = [str(c).strip() for c in cabins]
+    else:
+        raw_list = []
+    out: List[str] = []
+    for c in raw_list:
+        if c:
+            c = c.upper()
+            if c not in out:
+                out.append(c)
+    return out
+
+
 def add_task(
     task_date: str,
     from_code: str,
@@ -116,8 +146,18 @@ def add_task(
     target_price: int,
     fare_type: str = "normal",
     task_date_end: str = "",
+    min_seats: int = 1,
+    cabins: Optional[List[str]] = None,
 ) -> None:
-    """新增监控任务。task_date_end 为空表示只监控单日。"""
+    """新增监控任务。task_date_end 为空表示只监控单日。
+
+    min_seats：余票达到 N 张才触发（默认 1，即任何有票）；
+    cabins：舱位白名单（如 ["B","C"]），命中任一舱位余量之和才算数；空列表=不限舱位。
+    """
+    # PLUS 会员专享：监控的即是 199 元会员价档位（有票即命中），不适用自定义阈值；
+    # 只有普通票价任务才使用用户设置的目标价。
+    if fare_type == "plus":
+        target_price = 199
     tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
     task_list = tasks.get("tasks", [])
     task_list.append(
@@ -130,6 +170,8 @@ def add_task(
             "target_price": int(target_price),
             "fare_type": "plus" if fare_type == "plus" else "normal",
             "enabled": True,
+            "min_seats": max(1, int(min_seats or 1)),
+            "cabins": _norm_cabins(cabins),
         }
     )
     tasks["tasks"] = task_list
@@ -143,6 +185,20 @@ def delete_task(task_id: str) -> None:
     _write_json(TASKS_PATH, tasks)
 
 
+def delete_tasks(task_ids: List[str]) -> int:
+    """按 id 列表删除任务（兼容分组行一次删除多条）。返回删除条数。"""
+    ids = {str(i).strip() for i in task_ids if str(i).strip()}
+    if not ids:
+        return 0
+    tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
+    task_list = tasks.get("tasks", [])
+    keep = [task for task in task_list if str(task.get("id", "")).strip() not in ids]
+    removed = len(task_list) - len(keep)
+    tasks["tasks"] = keep
+    _write_json(TASKS_PATH, tasks)
+    return removed
+
+
 def set_task_enabled(task_id: str, enabled: bool) -> None:
     """启用或停用单个任务（daemon 会过滤 enabled=False 的任务）。"""
     tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
@@ -152,9 +208,204 @@ def set_task_enabled(task_id: str, enabled: bool) -> None:
     _write_json(TASKS_PATH, tasks)
 
 
+def set_tasks_enabled(task_ids: List[str], enabled: bool) -> int:
+    """按 id 列表批量启停任务（兼容分组行一次切换多条）。返回受影响条数。"""
+    ids = {str(i).strip() for i in task_ids if str(i).strip()}
+    if not ids:
+        return 0
+    tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
+    touched = 0
+    for task in tasks.get("tasks", []):
+        if str(task.get("id", "")).strip() in ids:
+            task["enabled"] = bool(enabled)
+            touched += 1
+    _write_json(TASKS_PATH, tasks)
+    return touched
+
+
+def expand_task_dates(task: Dict[str, Any]) -> List[str]:
+    """展开任务监控日期集合（去重排序）。
+
+    - 新模型：task.dates 为日期列表（同一航线多个监控日期合并）；直接展开；
+    - 旧模型：无 dates 时按 date ~ date_end 逐日展开（与 daemon.expand_dates 同口径）。
+    """
+    dates = task.get("dates")
+    if isinstance(dates, list) and dates:
+        out: List[str] = []
+        for d in dates:
+            s = str(d).strip()
+            try:
+                datetime.strptime(s, "%Y-%m-%d")
+                out.append(s)
+            except ValueError:
+                continue
+        if out:
+            return sorted(set(out))
+    start = str(task.get("date", "") or "").strip()
+    end = str(task.get("date_end", "") or "").strip() or start
+    if not start:
+        return []
+    try:
+        d0 = datetime.strptime(start, "%Y-%m-%d").date()
+        d1 = datetime.strptime(end, "%Y-%m-%d").date()
+    except ValueError:
+        return [start] if start else []
+    if d1 < d0:
+        d0, d1 = d1, d0
+    out = []
+    cur = d0
+    while cur <= d1:
+        out.append(cur.isoformat())
+        cur += timedelta(days=1)
+    return out
+
+
+def _task_key(from_code: str, to_code: str, flight_no: Any, dep_time: Any, arr_time: Any) -> str:
+    """任务分组键：出发|到达|航班号|起飞|到达。
+
+    - 不同航班号/起降时刻各自成任务（穷举，不按航线合并）；
+    - 无航班号的旧式条目退化为按航线合并（向后兼容旧添加入口）。
+    """
+    return "|".join([
+        from_code,
+        to_code,
+        str(flight_no or "").strip().upper(),
+        str(dep_time or "").strip(),
+        str(arr_time or "").strip(),
+    ])
+
+
+def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """从「航线查询」批量创建监控任务（当前只监控 199 元优惠价档）。
+
+    规则：
+    - 「一个航班 = 一条任务」：按 出发|到达|航班号|起飞|到达 分组，把一天内不同时间起飞的
+      航班全部穷举成独立监控任务（不按航线合并，避免不同时刻的航班被并成一条导致漏提醒）；
+    - 同一分组（同航班号且起降时刻相同）的多个可飞日期并入同一条任务；
+    - 合并/新建统一为 fare_type=plus、target_price=199（普通票价档暂不监控）；
+    - 快照字段（代表航班/时刻/经停/档位）用于列表展示，daemon 会按 task.flight_no 过滤航班，
+      只提醒任务对应的那个航班，避免同航线多个任务重复提醒。
+
+    返回 {"created": 新建条数, "merged": 合并条数}。
+    """
+    def _norm_dates(dates: Any) -> List[str]:
+        out: List[str] = []
+        for d in (dates or []):
+            s = str(d).strip()
+            try:
+                datetime.strptime(s, "%Y-%m-%d")
+                out.append(s)
+            except ValueError:
+                continue
+        return sorted(set(out))
+
+    created = 0
+    merged = 0
+    tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
+    existing = tasks.get("tasks", [])
+    idx: Dict[str, int] = {}
+    for i, t in enumerate(existing):
+        fc, tc = str(t.get("from_code", "")).strip().upper(), str(t.get("to_code", "")).strip().upper()
+        if fc and tc:
+            idx.setdefault(_task_key(fc, tc, t.get("flight_no"), t.get("dep_time"), t.get("arr_time")), i)
+
+    for item in items or []:
+        from_code = str(item.get("from_code", "")).strip().upper()
+        to_code = str(item.get("to_code", "")).strip().upper()
+        dates = _norm_dates(item.get("dates"))
+        if not from_code or not to_code or not dates:
+            continue
+        product = str(item.get("product", "") or "").strip()
+        # 余票/舱位监控条件：min_seats（至少 N 张）+ cabins 舱位白名单
+        min_seats = item.get("min_seats")
+        cabins = item.get("cabins")
+        has_seat_cfg = min_seats is not None or cabins is not None
+        norm_min = max(1, int(min_seats or 1)) if min_seats is not None else 1
+        norm_cabins = _norm_cabins(cabins) if cabins is not None else []
+        snapshot = {
+            "flight_no": str(item.get("flight_no", "") or "").strip(),
+            "dep_time": str(item.get("dep_time", "") or "").strip(),
+            "arr_time": str(item.get("arr_time", "") or "").strip(),
+        }
+        stop = item.get("stop")
+        if isinstance(stop, dict) and (stop.get("kind") or stop.get("stops_detail")):
+            snapshot["stop"] = stop
+
+        # 分组键含航班号+起降时刻：一天内不同时间的航班各自成为独立监控任务
+        key = _task_key(from_code, to_code, snapshot["flight_no"], snapshot["dep_time"], snapshot["arr_time"])
+
+        if key in idx:
+            t = existing[idx[key]]
+            merged_dates = _norm_dates(expand_task_dates(t) + dates)
+            t["dates"] = merged_dates
+            t["date"] = merged_dates[0]
+            t["date_end"] = merged_dates[-1]
+            # 当前明确只监控 199 元优惠价档：合并时统一收敛（旧普通票价任务不再保留自定义阈值语义）
+            t["fare_type"] = "plus"
+            t["target_price"] = 199
+            old_p = {p for p in str(t.get("product", "") or "").split("/") if p}
+            new_p = {p for p in product.split("/") if p}
+            t["product"] = "/".join(sorted(old_p | new_p))
+            for k in ("flight_no", "dep_time", "arr_time"):
+                if not t.get(k) and snapshot.get(k):
+                    t[k] = snapshot[k]
+            if "stop" not in t and "stop" in snapshot:
+                t["stop"] = snapshot["stop"]
+            if has_seat_cfg:
+                # 同批转的余票/舱位条件一致：显式指定时覆盖（更严格的监控条件生效）
+                t["min_seats"] = norm_min
+                t["cabins"] = norm_cabins
+            merged += 1
+        else:
+            task = {
+                "id": str(uuid.uuid4()),
+                "dates": dates,
+                "date": dates[0],
+                "date_end": dates[-1],
+                "from_code": from_code,
+                "to_code": to_code,
+                "target_price": 199,
+                "fare_type": "plus",
+                "enabled": True,
+                "product": product,
+                "created_at": datetime.now().isoformat(timespec="seconds"),
+            }
+            for k in ("flight_no", "dep_time", "arr_time"):
+                if snapshot.get(k):
+                    task[k] = snapshot[k]
+            if "stop" in snapshot:
+                task["stop"] = snapshot["stop"]
+            if has_seat_cfg:
+                task["min_seats"] = norm_min
+                task["cabins"] = norm_cabins
+            existing.append(task)
+            idx[key] = len(existing) - 1
+            created += 1
+
+    tasks["tasks"] = existing
+    _write_json(TASKS_PATH, tasks)
+    return {"created": created, "merged": merged}
+
+
 def save_proxy(proxy: str) -> None:
     config = load_config()
     config["proxy"] = str(proxy or "").strip()
+    _write_json(CONFIG_PATH, config)
+
+
+def save_price_query(enabled: bool, min_interval: int) -> None:
+    """保存实时查价开关与最小间隔。min_interval 钳制在 2~120 秒。"""
+    config = load_config()
+    pq = config.setdefault("price_query", dict(DEFAULT_CONFIG["price_query"]))
+    if not isinstance(pq, dict):
+        pq = dict(DEFAULT_CONFIG["price_query"])
+        config["price_query"] = pq
+    pq["enabled"] = bool(enabled)
+    try:
+        interval = max(2, min(120, int(min_interval)))
+    except (TypeError, ValueError):
+        interval = DEFAULT_CONFIG["price_query"]["min_interval"]
+    pq["min_interval"] = interval
     _write_json(CONFIG_PATH, config)
 
 
@@ -175,6 +426,71 @@ def save_feishu(app_id: str = "", app_secret: str = "", receiver: str = "") -> N
     if app_secret:
         feishu["app_secret"] = str(app_secret).strip()
     _write_json(CONFIG_PATH, config)
+
+
+def save_notify_channels(raw: Dict[str, Any]) -> None:
+    """保存多通道通知配置（企业微信/钉钉/Bark/ntfy + 全局加急开关）。
+
+    凭证字段（secret/device_key/topic 等）空串表示“不修改”，避免前端脱敏值覆盖真实凭证。
+    """
+    config = load_config()
+    nc = config.setdefault("notify_channels", dict(DEFAULT_CONFIG["notify_channels"]))
+    if not isinstance(nc, dict):
+        nc = dict(DEFAULT_CONFIG["notify_channels"])
+        config["notify_channels"] = nc
+
+    # 加急开关已从界面移除：重要/阻断告警默认加急，保存时固定开启
+    nc["urgent_enabled"] = True
+
+    field_rules = {
+        "wecom": ("corp_id", "agent_id", "user_id", "secret"),
+        "dingtalk": ("webhook", "secret"),
+        "bark": ("device_key", "server"),
+        "ntfy": ("topic", "server"),
+    }
+    for name, fields in field_rules.items():
+        ch = nc.setdefault(name, dict(DEFAULT_CONFIG["notify_channels"].get(name, {})))
+        if not isinstance(ch, dict):
+            ch = dict(DEFAULT_CONFIG["notify_channels"].get(name, {}))
+            nc[name] = ch
+        incoming = raw.get(name)
+        if not isinstance(incoming, dict):
+            continue
+        if "enabled" in incoming:
+            ch["enabled"] = bool(incoming.get("enabled", False))
+        for f in fields:
+            v = incoming.get(f)
+            if v is None:
+                continue
+            val = str(v).strip()
+            if f in ("secret", "device_key", "topic"):
+                # secret 类凭证：空串=不修改；其他字段空串=清空
+                if val:
+                    ch[f] = val
+            else:
+                ch[f] = val
+    _write_json(CONFIG_PATH, config)
+
+
+def read_notify_history(limit: int = 50) -> List[Dict[str, Any]]:
+    """读取最近的通知历史（成功/失败都记录）。"""
+    if not NOTIFY_HISTORY_PATH.exists():
+        return []
+    out: List[Dict[str, Any]] = []
+    try:
+        with open(NOTIFY_HISTORY_PATH, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except OSError:
+        return []
+    for line in lines[-limit:]:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
 
 
 def save_curl(raw: str, fare_type: str) -> tuple[bool, str]:
@@ -216,6 +532,39 @@ def read_price_history(line_count: int = 50) -> List[Dict[str, Any]]:
     return records
 
 
+def _archive_and_reset(path: Path) -> int:
+    """将数据文件轮转为备份（保留旧档），然后重建空文件继续写入，返回归档字节数。
+
+    用于页面的“清除”操作：界面展示清零，真正的历史仍保留在本地备份文件中。
+    """
+    if not path.exists():
+        path.touch()
+        return 0
+    with portalocker.Lock(str(path), mode="a+", timeout=5, encoding="utf-8") as f:
+        f.seek(0, os.SEEK_END)
+        size = f.tell()
+        if size == 0:
+            return 0
+        f.flush()
+        backup = str(path) + ".bak"
+        try:
+            os.replace(str(path), backup)
+        except OSError:
+            return 0
+        path.touch()
+        return size
+
+
+def clear_price_history() -> int:
+    """清除价格历史（页面显示清零，旧数据归档为 price_history.jsonl.bak）。"""
+    return _archive_and_reset(HISTORY_PATH)
+
+
+def clear_run_log() -> int:
+    """清除运行日志（页面显示清零，旧日志归档为 run_log.txt.bak）。"""
+    return _archive_and_reset(LOG_PATH)
+
+
 def set_status(status: str) -> None:
     config = load_config()
     config["status"] = status
@@ -238,6 +587,12 @@ def load_config() -> Dict[str, Any]:
     config.setdefault("plus_curl", DEFAULT_CONFIG["plus_curl"])
     config.setdefault("proxy", DEFAULT_CONFIG["proxy"])
     config.setdefault("sign_refresh", DEFAULT_CONFIG["sign_refresh"])
+    config.setdefault("price_query", dict(DEFAULT_CONFIG["price_query"]))
+    if not isinstance(config["price_query"], dict):
+        config["price_query"] = dict(DEFAULT_CONFIG["price_query"])
+    config["price_query"].setdefault("enabled", DEFAULT_CONFIG["price_query"]["enabled"])
+    config["price_query"].setdefault("min_interval", DEFAULT_CONFIG["price_query"]["min_interval"])
+
     config.setdefault("feishu", dict(DEFAULT_CONFIG["feishu"]))
 
     if not isinstance(config["feishu"], dict):

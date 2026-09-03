@@ -117845,8 +117845,8 @@
     "airport": "杭州萧山国际机场",
     "iata": "HGH"
    },
-   "dep_time": "08:50",
-   "arr_time": "11:20",
+   "dep_time": "07:40",
+   "arr_time": "10:00",
    "days": [
     2,
     4,
@@ -117917,7 +117917,7 @@
     "airport": "长春龙嘉国际机场",
     "iata": "CGQ"
    },
-   "dep_time": "08:50",
+   "dep_time": "07:40",
    "arr_time": "15:50",
    "days": [
     2,

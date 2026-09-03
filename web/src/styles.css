@@ -1,6 +1,6 @@
 /* 海航监控 · 品牌 token 与少量自定义样式（组件样式由 antd 托管） */
 :root {
-  --color-primary: #1677ff;
+  --color-primary: #2f6bff;
   --color-low-price: #ff4d6a;
   --color-success: #52c41a;
 }
@@ -60,6 +60,51 @@ body {
   vertical-align: middle;
 }
 
+/* ---------- 通知渠道卡片（六卡统一样式/等高） ---------- */
+.channel-card { height: 100%; }
+.channel-card .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  min-height: 148px;
+}
+.channel-card .ant-card-head {
+  min-height: 40px;
+}
+.channel-card .ant-card-head-title { padding: 8px 0; }
+/* 状态/配置信息行：固定一行小字，无内容也占位保持六卡等高 */
+.channel-status {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.channel-status .ant-tag { margin-inline-end: 0; font-size: 12px; line-height: 18px; }
+/* 中间操作区 */
+.channel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* 测试结果：固定底部占位区，无提示也占位 → 六卡等高、提示位置统一 */
+.channel-result {
+  margin-top: auto;
+  min-height: 34px;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 6px;
+}
+.channel-result .ant-alert {
+  width: 100%;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.channel-result .ant-alert-message { font-size: 12px; line-height: 1.5; }
+.channel-result .ant-alert-action { margin-inline-start: 8px; }
+
 /* ---------- 历史高亮 ---------- */
 .hit-row td { background: #fff1f0 !important; }
 
@@ -97,3 +142,107 @@ body {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* ---------- 班期日历（滑动版） ---------- */
+.cal-wrap {
+  user-select: none;
+  touch-action: pan-y;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 14px 16px 10px;
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cal-title { font-size: 16px; font-weight: 600; color: rgba(0, 0, 0, 0.88); }
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  animation: calSlide 0.18s ease-out;
+}
+@keyframes calSlide {
+  from { opacity: 0.35; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: default;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+  transition: background 0.15s;
+}
+.cal-cell-blank { visibility: hidden; }
+.cal-cell-off { color: rgba(0, 0, 0, 0.22); }
+.cal-cell-no { background: #fafafa; color: rgba(0, 0, 0, 0.45); }
+.cal-cell-ok {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #389e0d;
+  font-weight: 600;
+}
+.cal-cell-ok:hover { background: #e8f7dd; }
+.cal-cell-today { box-shadow: inset 0 0 0 2px var(--color-primary); }
+.cal-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--color-success);
+  color: #fff;
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(82, 196, 26, 0.4);
+}
+.cal-check::after { content: '✓'; }
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.65);
+}
+.cal-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+.cal-dot-ok { background: var(--color-success); }
+.cal-dot-no { background: #d9d9d9; }
+.cal-dot-off { background: #f0f0f0; border: 1px solid #ededed; }
+.cal-swipe-hint { font-size: 12px; color: #bfbfbf; margin-left: auto; }
+/* 适配暗色主题 */
+[data-theme='dark'] .cal-wrap { background: #141414; border-color: #303030; }
+[data-theme='dark'] .cal-title { color: rgba(255, 255, 255, 0.88); }
+[data-theme='dark'] .cal-week { color: rgba(255, 255, 255, 0.45); }
+[data-theme='dark'] .cal-cell { color: rgba(255, 255, 255, 0.85); }
+[data-theme='dark'] .cal-cell-off { color: rgba(255, 255, 255, 0.18); }
+[data-theme='dark'] .cal-cell-no { background: #262626; color: rgba(255, 255, 255, 0.45); }
+[data-theme='dark'] .cal-cell-ok { background: #162312; border-color: #274916; color: #95de64; }
+[data-theme='dark'] .cal-legend { color: rgba(255, 255, 255, 0.65); }

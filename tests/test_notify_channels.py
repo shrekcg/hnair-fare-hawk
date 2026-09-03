@@ -81,9 +81,10 @@ def test_save_notify_channels_secret_keep_on_empty(app_env):
 
 
 def test_save_notify_channels_enabled_and_urgent(app_env):
+    # 加急开关已从界面移除：即使传入 urgent_enabled=False 也固定开启（重要/阻断告警默认加急）
     app_mod.save_notify_channels({"urgent_enabled": False, "bark": {"enabled": True}})
     cfg = _read_config(app_env)
-    assert cfg["notify_channels"]["urgent_enabled"] is False
+    assert cfg["notify_channels"]["urgent_enabled"] is True
     assert cfg["notify_channels"]["bark"]["enabled"] is True
     assert cfg["notify_channels"]["wecom"]["enabled"] is False
 

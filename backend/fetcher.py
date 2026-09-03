@@ -11,7 +11,7 @@ import shlex
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qsl, urlsplit
 
 import requests
@@ -485,6 +485,135 @@ def _format_flight_code(segment: Dict[str, Any]) -> str:
     return str(segment.get("flightCode", "")).strip() or "UNKNOWN"
 
 
+def _hhmm(value: Any) -> str:
+    """把经停起降时间规整为 HH:mm；接口有时给完整 datetime，有时只有 HH:mm。"""
+    s = str(value or "").strip()
+    if not s:
+        return ""
+    if " " in s:
+        s = s.split(" ")[-1]
+    if len(s) >= 5 and s[2] == ":":
+        return s[:5]
+    return s
+
+
+def _collect_stop_details(segments: Any) -> List[Dict[str, Any]]:
+    """收集所有经停/中转点的详细信息（机场三字码、航站楼、起降时间、停留时长）。
+
+    两种来源：
+    - 单航段的 stopInfoCitys[]（同机经停，如 Y87531 深圳-长春 经停杭州）：
+      自带 airPortTerm / arrivalTime / departrueTime / stopoverTime；
+    - 多航段切分：中间点由 segments[i].arrivalAirportCode 与相邻段的
+      arrivalTerminal/departureTerminal、arrivalTime/departureTime 推断。
+    单航段只有 stopCitys 中文名时以中文名兜底（code 为空）。
+    """
+    details: List[Dict[str, Any]] = []
+    # 1) stopInfoCitys（最完整）
+    for s in segments:
+        if not isinstance(s, dict):
+            continue
+        info = s.get("stopInfoCitys")
+        if not isinstance(info, list):
+            continue
+        for item in info:
+            if not isinstance(item, dict):
+                continue
+            code = str(item.get("airportCode") or "").strip().upper()
+            if not code:
+                continue
+            details.append({
+                "code": code,
+                "city": str(item.get("airportName") or "").strip(),
+                "terminal": str(item.get("airPortTerm") or "").strip(),
+                "arrive": _hhmm(item.get("arrivalTime")),
+                "depart": _hhmm(item.get("departrueTime")),
+                "stay": str(item.get("stopoverTime") or "").strip(),
+            })
+    # 2) 多航段段间推断（同机经停/中转的共同中间点）
+    for i in range(len(segments) - 1):
+        s0, s1 = segments[i], segments[i + 1]
+        if not (isinstance(s0, dict) and isinstance(s1, dict)):
+            continue
+        code = str(s0.get("arrivalAirportCode") or "").strip().upper()
+        if not code or any(d.get("code") == code for d in details):
+            continue
+        term0 = str(s0.get("arrivalTerminal") or "").strip()
+        term1 = str(s1.get("departureTerminal") or "").strip()
+        terminal = term0 if term0 and term0 == term1 else "/".join(filter(None, [term0, term1]))
+        details.append({
+            "code": code,
+            "city": "",
+            "terminal": terminal,
+            "arrive": _hhmm(s0.get("arrivalTime")),
+            "depart": _hhmm(s1.get("departureTime")),
+            "stay": "",
+        })
+    # 3) stopCitys 中文兜底（无三字码）
+    for s in segments:
+        if not isinstance(s, dict):
+            continue
+        stop_citys = s.get("stopCitys")
+        if isinstance(stop_citys, str):
+            stop_citys = [stop_citys]
+        if not isinstance(stop_citys, list):
+            continue
+        for c in stop_citys:
+            c = str(c or "").strip()
+            if not c:
+                continue
+            if any(d.get("city") == c for d in details) or any(d.get("code") == c.upper() for d in details):
+                continue
+            details.append({"code": "", "city": c, "terminal": "", "arrive": "", "depart": "", "stay": ""})
+    return details
+
+
+def _segment_stop_info(segments: Any) -> Optional[Dict[str, Any]]:
+    """从航段列表识别经停/中转信息（来自查询响应自身的 flightSegments，不额外请求）。
+
+    返回 {"kind": "direct"|"stopover"|"transfer", "legs": N, "stops": M, "via": [...],
+          "stops_detail": [...]}；无法判断（无航段）时返回 None。
+    stops_detail 仅在有经停/中转点时附带，每项含
+    code（三字码，可能为空）/city/terminal/arrive/depart/stay。
+    - direct   ：单航段直飞
+    - stopover ：同机经停（多航段同航班号，或单航段带 stopCitys/stopInfoCitys，
+                 如 Y8 7531 深圳-长春 经停杭州）
+    - transfer ：多航段且航班号不同（中转）
+    via 为中间经停/中转机场三字码（不含起点与终点）。
+    """
+    if not isinstance(segments, list) or not segments:
+        return None
+    legs = len(segments)
+    codes = [_format_flight_code(s) for s in segments if isinstance(s, dict)]
+    non_empty = [c for c in codes if c]
+    details = _collect_stop_details(segments)
+    extra_stops = len(details)
+    via: List[str] = [d.get("code") or d.get("city") for d in details if d.get("code") or d.get("city")]
+    if legs == 1:
+        if extra_stops:
+            kind = "stopover"
+            stops = extra_stops
+        else:
+            kind = "direct"
+            stops = 0
+    elif len(set(non_empty)) <= 1:
+        # 同机经停；航段信息不全时保守按经停处理
+        kind = "stopover"
+        stops = extra_stops
+    else:
+        kind = "transfer"
+        stops = extra_stops
+    if not via:
+        via = [
+            str(s.get("arrivalAirportCode") or "").strip().upper()
+            for s in segments[:-1]
+            if isinstance(s, dict) and str(s.get("arrivalAirportCode") or "").strip()
+        ]
+    result: Dict[str, Any] = {"kind": kind, "legs": legs, "stops": stops, "via": via}
+    if details:
+        result["stops_detail"] = details
+    return result
+
+
 def _is_price_available(itinerary: Dict[str, Any]) -> bool:
     """
     检查航班票价是否真实可购买。
@@ -547,6 +676,61 @@ def _extract_itinerary_price(itinerary: Dict[str, Any]) -> int | None:
         if base_price >= 0:
             return base_price
     return None
+
+
+def _extract_seat_info(itinerary: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """从航班响应提取余票与舱位信息（PLUS 专享档）。
+
+    响应结构（2026-09-03 实测）：
+      airItineraries[].airItineraryPrices[].flightBookingClasses[]
+        ├─ bookingClass       "B"/"C"/"Z"/"R" 等
+        ├─ inventoryQuantity  剩余张数；充足时为 10（封顶）
+        └─ inventoryStatus    "A"=充足(10张+)；数字=精确剩余张数(1/2/4…)
+
+    同一 bookingClass 可能跨多个价格产品（666/2666 PLUS 专享）重复出现，
+    按舱位去重取最大余量（同一物理库存的不同产品视图）；seats=各舱位余量之和。
+    返回 {"seats": N, "cabins": [{"cabin","qty","status"}, ...]}；解析不到返回 None。
+    """
+    options = itinerary.get("airItineraryPrices")
+    if not isinstance(options, list) or not options:
+        return None
+
+    cabins: Dict[str, int] = {}
+    for opt in options:
+        if not isinstance(opt, dict):
+            continue
+        classes = opt.get("flightBookingClasses")
+        if not isinstance(classes, list):
+            continue
+        for b in classes:
+            if not isinstance(b, dict):
+                continue
+            code = str(b.get("bookingClass") or "").strip()
+            if not code:
+                continue
+            qty = _safe_int(b.get("inventoryQuantity"))
+            if qty is None:
+                qty = 0
+            if qty < 0:
+                qty = 0
+            status = str(b.get("inventoryStatus") or "").strip().upper()
+            # "A"=充足，官方仅返回 10 封顶；精确数字时按字面值
+            if status in ("A", "AVAILABLE"):
+                qty = max(qty, 10)
+            cabins[code] = max(cabins.get(code, 0), qty)
+
+    if not cabins:
+        return None
+
+    cabin_list = [
+        {
+            "cabin": c,
+            "qty": q,
+            "status": "A" if q >= 10 else str(q),
+        }
+        for c, q in sorted(cabins.items())
+    ]
+    return {"seats": sum(cabins.values()), "cabins": cabin_list}
 
 
 def _extract_price_from_option(option: Dict[str, Any]) -> int | None:
@@ -689,6 +873,14 @@ def _build_request_profile(
     - True  强制刷新。
     """
     captured_profile = _load_captured_request_profile(fare_type)
+    if not captured_profile:
+        # 票据派生：本类型未抓包时，复用另一档票据的凭证，仅改写端点与 specialZone。
+        # 普通档与 PLUS 档共用同一套 cookie/token/签名，差异只有端点与 specialZone 字段。
+        other_type = "plus" if fare_type == "normal" else "normal"
+        captured_profile = _load_captured_request_profile(other_type)
+        if captured_profile:
+            captured_profile["derived_from"] = other_type
+
     if captured_profile:
         payload = deepcopy(captured_profile["payload"])
         data = payload.setdefault("data", {})
@@ -702,6 +894,11 @@ def _build_request_profile(
             # PLUS 会员专享通道固定使用 ffl/airLowFareSearch 端点。
             # 抓包抓到的 airCtLowFareSearch 是普通低价接口，对 PLUS 会返回 0903“无航班”。
             captured_profile["url"] = REQUEST_URL_PLUS
+        else:
+            # 普通档永远走 airLowFareSearch 端点，且不带 specialZone。
+            # 派生自 PLUS 票据时也要清掉 specialZone，否则返回的是会员档价格。
+            data.pop("specialZone", None)
+            captured_profile["url"] = REQUEST_URL
 
         captured_profile["payload"] = payload
 
@@ -915,12 +1112,35 @@ def _request_price(profile: Dict[str, Any]) -> "tuple[str, List[Dict[str, Any]]]
             segment0 = segments[0]
         flight_no = _format_flight_code(segment0)
 
-        results.append(
-            {
-                "flight": str(flight_no),
-                "price": price,
-            }
-        )
+        result: Dict[str, Any] = {
+            "flight": str(flight_no),
+            "price": price,
+        }
+        stop_info = _segment_stop_info(segments)
+        if stop_info is not None:
+            result["stop"] = stop_info
+
+        # PLUS 余票与舱位（199 元档各舱位余量），供热票监控/实时余票展示
+        seat_info = _extract_seat_info(itinerary)
+        if seat_info is not None:
+            result["seats"] = seat_info.get("seats", 0)
+            result["cabins"] = seat_info.get("cabins", [])
+
+        # 实时起降时刻与航站楼（供前端覆盖底表静态 CSV 时刻，如 Y87531 CSV 误抓 08:50）
+        if isinstance(segments, list) and segments:
+            s_first = segments[0] if isinstance(segments[0], dict) else {}
+            s_last = segments[-1] if isinstance(segments[-1], dict) else {}
+            dep_time = _hhmm(s_first.get("departureTime"))
+            arr_time = _hhmm(s_last.get("arrivalTime"))
+            if dep_time or arr_time:
+                result["times"] = {
+                    "dep": dep_time,
+                    "arr": arr_time,
+                    "dep_terminal": str(s_first.get("departureTerminal") or "").strip(),
+                    "arr_terminal": str(s_last.get("arrivalTerminal") or "").strip(),
+                }
+
+        results.append(result)
 
     return "ok", results
 
@@ -970,10 +1190,10 @@ def fetch_price_status(
 
 def real_fetch_price(from_code: str, to_code: str, date: str, fare_type: str = "normal") -> List[Dict[str, Any]]:
     """
-    抓取价格列表（兼容旧接口，返回格式不变）。
+    抓取价格列表（兼容旧接口，字段只增不减）。
 
     返回格式：
-    [{"flight": "HU1234", "price": 1360}, ...]
+    [{"flight": "HU1234", "price": 1360, "stop": {"kind": "direct"/"stopover"/"transfer", "legs": N, "stops": N-1, "via": [中间机场三字码...]}}, ...]
 
     异常规则：
     - 凭证失效/验签失败/结构异常：抛 TokenExpiredError

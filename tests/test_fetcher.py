@@ -86,6 +86,205 @@ def test_captured_plus_profile_keeps_sign_and_updates_route(tmp_path, monkeypatc
     }
 
 
+def test_derived_normal_profile_from_plus_ticket(tmp_path, monkeypatch):
+    """只有 PLUS 票据时，普通档自动派生：复用凭证，改写端点并移除 specialZone。"""
+    command = """curl --url 'https://example.test/ffl/airLowFareSearch?token=masked&hnairSign=valid-sign' \\
+  -H 'appver: 10.17.2' \\
+  -b 'session=masked' \\
+  --data-raw '{"data": {"originDestinations": [{"origin": "AAA", "destination": "BBB", "departureDate": "2026-01-01"}], "specialZone": "ffl"}}'
+"""
+    (tmp_path / "config.json").write_text(
+        json.dumps({"plus_curl": command}), encoding="utf-8"
+    )
+    monkeypatch.setattr(fetcher, "BASE_DIR", tmp_path)
+
+    profile = fetcher._build_request_profile("SHE", "CAN", "2026-09-16", "normal")
+
+    assert profile["derived_from"] == "plus"
+    assert profile["url"] == fetcher.REQUEST_URL
+    assert "specialZone" not in profile["payload"]["data"]
+    assert profile["query"]["hnairSign"] == "valid-sign"
+    assert profile["headers"]["cookie"] == "session=masked"
+
+
+def test_derived_plus_profile_from_normal_ticket(tmp_path, monkeypatch):
+    """只有普通票据时，PLUS 档自动派生：复用凭证，改写端点并补 specialZone。"""
+    command = """curl --url 'https://example.test/airLowFareSearch?token=masked&hnairSign=valid-sign' \\
+  -H 'appver: 10.17.2' \\
+  -b 'session=masked' \\
+  --data-raw '{"data": {"originDestinations": [{"origin": "AAA", "destination": "BBB", "departureDate": "2026-01-01"}]}}'
+"""
+    (tmp_path / "config.json").write_text(
+        json.dumps({"normal_curl": command}), encoding="utf-8"
+    )
+    monkeypatch.setattr(fetcher, "BASE_DIR", tmp_path)
+
+    profile = fetcher._build_request_profile("SHE", "CAN", "2026-09-16", "plus")
+
+    assert profile["derived_from"] == "normal"
+    assert profile["url"] == fetcher.REQUEST_URL_PLUS
+    assert profile["payload"]["data"]["specialZone"] == "ffl"
+    assert profile["query"]["hnairSign"] == "valid-sign"
+    assert profile["headers"]["cookie"] == "session=masked"
+
+
+def _mk_segment(airline: str, flight_no: str, dep: str, arr: str) -> dict:
+    return {
+        "marketingAirlineCode": airline,
+        "flightNumber": flight_no,
+        "departureAirportCode": dep,
+        "arrivalAirportCode": arr,
+    }
+
+
+def _mk_stopover_payload():
+    """双航段同航班号（同机经停）的响应。"""
+    return {
+        "success": True,
+        "data": {
+            "originDestinations": [
+                {
+                    "airItineraries": [
+                        {
+                            "minLowPrice": 299,
+                            "flightSegments": [
+                                _mk_segment("HU", "7167", "SYX", "HGH"),
+                                _mk_segment("HU", "7167", "HGH", "HRB"),
+                            ],
+                            "airItineraryPrices": [
+                                {"travelerPrices": [{"baseFare": "299"}]}
+                            ],
+                        }
+                    ]
+                }
+            ]
+        },
+    }
+
+
+def test_stop_info_direct():
+    info = fetcher._segment_stop_info([_mk_segment("HU", "7181", "HAK", "PEK")])
+    assert info == {"kind": "direct", "legs": 1, "stops": 0, "via": []}
+    assert fetcher._segment_stop_info(None) is None
+    assert fetcher._segment_stop_info([]) is None
+
+
+def test_stop_info_stopover_same_flight():
+    segs = [
+        _mk_segment("HU", "7167", "SYX", "HGH"),
+        _mk_segment("HU", "7167", "HGH", "HRB"),
+    ]
+    info = fetcher._segment_stop_info(segs)
+    assert info["kind"] == "stopover"
+    assert info["legs"] == 2
+    assert info["stops"] == 1
+    assert info["via"] == ["HGH"]
+
+
+def test_stop_info_transfer_different_flights():
+    segs = [
+        _mk_segment("HU", "7181", "HAK", "PEK"),
+        _mk_segment("HU", "7235", "PEK", "HRB"),
+    ]
+    info = fetcher._segment_stop_info(segs)
+    assert info["kind"] == "transfer"
+    assert info["legs"] == 2
+    assert info["via"] == ["PEK"]
+
+
+def test_stop_info_stopover_single_segment_stop_citys():
+    # 海航接口实际形态：单航段 + stopInfoCitys/stopCitys 表达经停
+    seg = {
+        **_mk_segment("Y8", "7531", "SZX", "CGQ"),
+        "stopCitys": ["杭州"],
+        "stopInfoCitys": [
+            {
+                "airportCode": "HGH",
+                "airportName": "杭州",
+                "airPortTerm": "T3",
+                "stopoverTime": "2h50m",
+                "arrivalTime": "2026-09-12 10:00:00",
+                "departrueTime": "2026-09-12 12:50:00",
+            }
+        ],
+        "stopQuantity": 1,
+    }
+    info = fetcher._segment_stop_info([seg])
+    assert info["kind"] == "stopover"
+    assert info["legs"] == 1
+    assert info["stops"] == 1
+    assert info["via"] == ["HGH"]
+    assert info["stops_detail"] == [
+        {
+            "code": "HGH",
+            "city": "杭州",
+            "terminal": "T3",
+            "arrive": "10:00",
+            "depart": "12:50",
+            "stay": "2h50m",
+        }
+    ]
+
+
+def test_stop_info_stopover_single_segment_stop_citys_chinese_fallback():
+    # 无 stopInfoCitys 时回退 stopCitys 中文名
+    seg = {
+        **_mk_segment("Y8", "7531", "SZX", "CGQ"),
+        "stopCitys": ["杭州"],
+    }
+    info = fetcher._segment_stop_info([seg])
+    assert info["kind"] == "stopover"
+    assert info["legs"] == 1
+    assert info["stops"] == 1
+    assert info["via"] == ["杭州"]
+    assert info["stops_detail"] == [
+        {"code": "", "city": "杭州", "terminal": "", "arrive": "", "depart": "", "stay": ""}
+    ]
+
+    # 纯直飞单段仍为 direct，且无 stops_detail 键
+    info2 = fetcher._segment_stop_info([_mk_segment("HU", "7181", "HAK", "PEK")])
+    assert info2 == {"kind": "direct", "legs": 1, "stops": 0, "via": []}
+
+
+def test_stop_info_stopover_multi_segment_detail_inferred():
+    # 多航段切分时中间点详情由相邻段推断（含航站楼与起降时间）
+    segs = [
+        {
+            **_mk_segment("HU", "7167", "SYX", "HGH"),
+            "arrivalTerminal": "T3",
+            "arrivalTime": "10:00",
+        },
+        {
+            **_mk_segment("HU", "7167", "HGH", "HRB"),
+            "departureTerminal": "T3",
+            "departureTime": "12:50",
+        },
+    ]
+    info = fetcher._segment_stop_info(segs)
+    assert info["kind"] == "stopover"
+    assert info["legs"] == 2
+    assert info["stops"] == 1
+    assert info["via"] == ["HGH"]
+    assert info["stops_detail"] == [
+        {"code": "HGH", "city": "", "terminal": "T3", "arrive": "10:00", "depart": "12:50", "stay": ""}
+    ]
+
+
+def test_fetch_price_status_includes_stop_info(monkeypatch):
+    monkeypatch.setattr(fetcher, "_build_request_profile", lambda *a, **k: _mk_profile())
+    monkeypatch.setattr(fetcher, "_load_proxy", lambda: "")
+    monkeypatch.setattr(
+        fetcher.requests,
+        "post",
+        lambda *a, **k: _mk_response(200, _mk_stopover_payload()),
+    )
+    status, fares = fetcher.fetch_price_status("SYX", "HRB", "2026-09-16", "normal")
+    assert status == "ok"
+    assert fares[0]["flight"] == "HU7167"
+    assert fares[0]["stop"]["kind"] == "stopover"
+    assert fares[0]["stop"]["via"] == ["HGH"]
+
+
 def test_real_fetch_price_parses_current_response(monkeypatch):
     profile = {
         "url": "https://example.test/ffl/airLowFareSearch",
@@ -109,6 +308,7 @@ def test_real_fetch_price_parses_current_response(monkeypatch):
         {
             "flight": "HU7204",
             "price": 199,
+            "stop": {"kind": "direct", "legs": 1, "stops": 0, "via": []},
         }
     ]
 

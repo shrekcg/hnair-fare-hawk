@@ -1,9 +1,16 @@
-"""城市/机场中文名与三字码映射。"""
+"""城市/机场中文名与三字码映射。
+
+基础表为手工维护的常用机场；此外会懒加载「666/2666 随心飞底表」
+（data/sediment/flights_normalized.json）中出现的机场自动补全，使任意
+底表航线城市都能创建监控任务。底表缺失时自动降级为基础表。
+"""
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import List
+from pathlib import Path
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -62,15 +69,45 @@ def _norm(text: str) -> str:
     return text.strip().replace("机场", "").replace(" ", "").lower()
 
 
+_SEDIMENT_PATH = Path(__file__).resolve().parent / "data" / "sediment" / "flights_normalized.json"
+_extra_airports: List[AirportEntry] | None = None
+_preferred_cache: Dict[str, str] | None = None
+
+
+def _all_airports() -> List[AirportEntry]:
+    """基础表 + 底表自动补全（懒加载缓存）。底表缺失/损坏时仅返回基础表。"""
+    global _extra_airports
+    if _extra_airports is None:
+        extra: List[AirportEntry] = []
+        try:
+            payload = json.loads(_SEDIMENT_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            payload = {}
+        seen = {a.code for a in AIRPORTS}
+        for rec in payload.get("records", []):
+            for key in ("origin", "dest"):
+                a = rec.get(key) or {}
+                code = str(a.get("iata", "")).strip().upper()
+                city = str(a.get("city", "")).strip()
+                airport = str(a.get("airport", "")).strip()
+                if not code or not city or code in seen:
+                    continue
+                seen.add(code)
+                aliases = tuple(dict.fromkeys(filter(None, (city, airport, city + airport, code))))
+                extra.append(AirportEntry(city, airport, code, aliases))
+        _extra_airports = extra
+    return AIRPORTS + _extra_airports
+
+
 def city_options() -> list[str]:
     """用于前端提示的选项列表。"""
-    return [f"{a.city}{a.airport}（{a.code}）" for a in AIRPORTS]
+    return [f"{a.city}{a.airport}（{a.code}）" for a in _all_airports()]
 
 
 def code_to_city_label(code: str) -> str:
     """三字码转中文展示，如：SZX -> 深圳宝安（SZX）。"""
     target = code.strip().upper()
-    for a in AIRPORTS:
+    for a in _all_airports():
         if a.code == target:
             return f"{a.city}{a.airport}（{a.code}）"
     return target
@@ -79,10 +116,41 @@ def code_to_city_label(code: str) -> str:
 def code_to_city_only(code: str) -> str:
     """三字码转纯城市名，如：SZX -> 深圳。"""
     target = code.strip().upper()
-    for a in AIRPORTS:
+    for a in _all_airports():
         if a.code == target:
             return a.city
     return target
+
+
+def code_to_airport_name(code: str) -> str:
+    """三字码转机场名（不带"机场"后缀），如：HGH -> 萧山。查不到返回空串。"""
+    target = code.strip().upper()
+    for a in _all_airports():
+        if a.code == target:
+            return a.airport
+    return ""
+
+
+def _preferred_code_for_city(city: str) -> str | None:
+    """多机场城市返回底表航班数最多的机场代码；底表缺失时返回 None。"""
+    global _preferred_cache
+    if _preferred_cache is None:
+        counts: Dict[str, Dict[str, int]] = {}
+        try:
+            payload = json.loads(_SEDIMENT_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            payload = {}
+        for rec in payload.get("records", []):
+            for key in ("origin", "dest"):
+                a = rec.get(key) or {}
+                c = str(a.get("city", "")).strip()
+                code = str(a.get("iata", "")).strip().upper()
+                if not c or not code:
+                    continue
+                bucket = counts.setdefault(c, {})
+                bucket[code] = bucket.get(code, 0) + 1
+        _preferred_cache = {c: max(bucket, key=bucket.get) for c, bucket in counts.items()}
+    return _preferred_cache.get(city)
 
 
 def resolve_code(raw: str) -> tuple[str | None, list[str]]:
@@ -92,6 +160,9 @@ def resolve_code(raw: str) -> tuple[str | None, list[str]]:
     返回：
     - code: 解析成功时返回三字码
     - tips: 失败或歧义时返回候选项
+
+    多机场城市（成都/上海/北京等）输入纯城市名时，优先返回底表
+    航班数最多的机场（如成都→TFU），避免常见歧义；底表不可用时按原歧义提示。
     """
     text = raw.strip()
     if not text:
@@ -99,7 +170,7 @@ def resolve_code(raw: str) -> tuple[str | None, list[str]]:
 
     # 允许直接输入任意合法 IATA 三字码，未收录机场也能创建监控任务。
     upper = text.upper()
-    code_set = {a.code for a in AIRPORTS}
+    code_set = {a.code for a in _all_airports()}
     if len(upper) == 3 and upper.isascii() and upper.isalpha():
         return upper, []
 
@@ -107,7 +178,7 @@ def resolve_code(raw: str) -> tuple[str | None, list[str]]:
 
     exact = []
     fuzzy = []
-    for a in AIRPORTS:
+    for a in _all_airports():
         aliases = {_norm(a.city), _norm(a.airport), _norm(a.city + a.airport), _norm(a.code)}
         aliases.update({_norm(x) for x in a.aliases})
         if n in aliases:
@@ -122,6 +193,9 @@ def resolve_code(raw: str) -> tuple[str | None, list[str]]:
         return exact[0].code, []
 
     if len(exact) > 1:
+        preferred = _preferred_code_for_city(exact[0].city)
+        if preferred:
+            return preferred, []
         return None, [f"{a.city}{a.airport}（{a.code}）" for a in exact]
 
     if len(fuzzy) == 1:

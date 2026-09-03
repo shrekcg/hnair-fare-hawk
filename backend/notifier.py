@@ -34,13 +34,25 @@ def _normalize_keys(send_keys: Iterable[str]) -> List[str]:
     return cleaned
 
 
+def _fare_label(fare_type: str) -> str:
+    """票价类型中文标签。"""
+    return "PLUS专享" if str(fare_type).strip().lower() == "plus" else "普通票价"
+
+
+def _date_range_str(task: Dict) -> str:
+    """日期显示：单日只显示日期，区间显示 起 至 止。"""
+    date = str(task.get("date", "-") or "-")
+    date_end = str(task.get("date_end", "") or "")
+    return f"{date} 至 {date_end}" if date_end and date_end != date else date
+
+
 def send_price_alert(
     send_keys: Iterable[str],
     task: Dict,
     flight: str,
     price: int,
 ) -> Dict[str, bool]:
-    """发送普通低价提醒。"""
+    """发送普通低价提醒（微信 Server酱，desp 支持 Markdown）。"""
     keys = _normalize_keys(send_keys)
     results: Dict[str, bool] = {}
     from_code = str(task.get("from_code", "-"))
@@ -52,15 +64,16 @@ def send_price_alert(
     from_city_short = code_to_city_only(from_code)
     to_city_short = code_to_city_only(to_code)
 
-    # 修改标题格式为：城市-城市价格，例如：深圳-乌鲁木齐199
-    title = f"{from_city_short}-{to_city_short}{price}"
+    title = f"🎉 {from_city_short}→{to_city_short} {price} 元"
     desp = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        f"日期：{task.get('date', '-') }\n\n"
-        f"航线：{from_city} -> {to_city}\n\n"
-        f"航线代码：{from_code} -> {to_code}\n\n"
-        f"航班：{flight}\n\n"
-        f"价格：{price} 元"
+        f"**航班**：{flight}\n\n"
+        f"**日期**：{_date_range_str(task)}\n\n"
+        f"**航线**：{from_city} → {to_city}\n\n"
+        f"**类型**：{_fare_label(task.get('fare_type', ''))}（目标价 ≤ {task.get('target_price', '-')} 元 · 已达标 ✅）\n\n"
+        f"**价格**：**{price} 元**\n\n"
+        "---\n\n"
+        f"⏰ 查询时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        "👉 价格已达标，建议尽快打开海航 App / 官网查询下单"
     )
     for key in keys:
         results[key] = _send_serverchan(key, title, desp)
@@ -73,11 +86,14 @@ def send_token_expired_alert(send_keys: Iterable[str], reason: str) -> Dict[str,
     keys = _normalize_keys(send_keys)
     results: Dict[str, bool] = {}
 
-    title = "[阻断告警] 海航接口凭证可能已过期"
+    title = "⚠️ [阻断告警] 海航接口凭证可能已过期"
     desp = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        f"原因：{reason}\n\n"
-        "处理建议：请更新本机保存的查询请求，然后重启 daemon。"
+        f"**原因**：{reason}\n\n"
+        "**处理建议**：\n"
+        "1. 打开控制台 → 票据管理，重新抓取并粘贴查询请求；\n"
+        "2. 保存后无需重启，下一轮监控自动生效。\n\n"
+        "---\n\n"
+        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     )
 
     for key in keys:
@@ -90,11 +106,12 @@ def send_test_alert(send_keys: Iterable[str]) -> Dict[str, bool]:
     """发送微信测试消息，帮助用户验证绑定是否成功。"""
     keys = _normalize_keys(send_keys)
     results: Dict[str, bool] = {}
-    title = "海航监控：微信绑定测试"
+    title = "✅ 海航监控：微信渠道测试"
     desp = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        "这是一条测试消息。\n\n"
-        "若你收到此消息，说明当前 SendKey 已绑定成功，后续低价与阻断告警可正常推送。"
+        f"如果你收到这条消息，说明**微信通知渠道已配置成功**。\n\n"
+        "后续低价提醒与凭证阻断告警将通过此渠道推送。\n\n"
+        "---\n\n"
+        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     )
 
     for key in keys:
@@ -172,19 +189,21 @@ def send_feishu_message(
 
 
 def _feishu_price_text(task: Dict, flight: str, price: int) -> tuple[str, str]:
-    """构造与微信一致的低价提醒标题与正文。"""
+    """构造与微信一致风格的低价提醒标题与正文（飞书 text 纯文本排版）。"""
     from_code = str(task.get("from_code", "-"))
     to_code = str(task.get("to_code", "-"))
     from_city_short = code_to_city_only(from_code)
     to_city_short = code_to_city_only(to_code)
-    title = f"{from_city_short}-{to_city_short}{price}"
+    title = f"🎉 {from_city_short}→{to_city_short} {price} 元"
     content = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"日期：{task.get('date', '-')}{' 至 ' + str(task.get('date_end', '')) if str(task.get('date_end', '')) != str(task.get('date', '')) else ''}\n"
-        f"航线：{code_to_city_label(from_code)} -> {code_to_city_label(to_code)}\n"
-        f"航线代码：{from_code} -> {to_code}\n"
         f"航班：{flight}\n"
-        f"价格：{price} 元"
+        f"日期：{_date_range_str(task)}\n"
+        f"航线：{code_to_city_label(from_code)} → {code_to_city_label(to_code)}\n"
+        f"类型：{_fare_label(task.get('fare_type', ''))}（目标价 ≤ {task.get('target_price', '-')} 元 · 已达标 ✅）\n"
+        f"价格：{price} 元\n"
+        "\n"
+        f"⏰ 查询时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        "👉 价格已达标，建议尽快打开海航 App / 官网查询下单"
     )
     return title, content
 
@@ -207,11 +226,14 @@ def send_feishu_token_alert(feishu_cfg: Dict, reason: str) -> tuple[bool, str]:
     """飞书高优先级 Token 过期告警。"""
     if not feishu_cfg:
         return False, ""
-    title = "[阻断告警] 海航接口凭证可能已过期"
+    title = "⚠️ [阻断告警] 海航接口凭证可能已过期"
     content = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"原因：{reason}\n"
-        "处理建议：请更新本机保存的查询请求，然后重启 daemon。"
+        "处理建议：\n"
+        "1. 打开控制台 → 票据管理，重新抓取并粘贴查询请求；\n"
+        "2. 保存后无需重启，下一轮监控自动生效。\n"
+        "\n"
+        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     )
     return send_feishu_message(
         str(feishu_cfg.get("app_id", "") or ""),
@@ -224,11 +246,12 @@ def send_feishu_token_alert(feishu_cfg: Dict, reason: str) -> tuple[bool, str]:
 
 def test_feishu(app_id: str, app_secret: str, receiver: str) -> tuple[bool, str]:
     """发送飞书测试消息，验证配置与权限是否就绪。"""
-    title = "海航监控：飞书通知测试"
+    title = "✅ 海航监控：飞书渠道测试"
     content = (
-        f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-        "这是一条测试消息。\n"
-        "若你收到此消息，说明飞书通知渠道已配置成功，后续低价与阻断告警可正常推送。"
+        "如果你收到这条消息，说明飞书通知渠道已配置成功。\n"
+        "后续低价提醒与凭证阻断告警将通过此渠道推送。\n"
+        "\n"
+        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     )
     return send_feishu_message(
         str(app_id or "").strip(),

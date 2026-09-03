@@ -8,7 +8,10 @@ async function request(path, options = {}) {
   })
   const data = await resp.json().catch(() => ({}))
   if (!resp.ok && !data.ok) {
-    throw new Error(data.error || `请求失败 (${resp.status})`)
+    const err = new Error(data.error || `请求失败 (${resp.status})`)
+    err.status = resp.status
+    err.retry_after = data.retry_after
+    throw err
   }
   return data
 }
@@ -21,9 +24,10 @@ export const api = {
 
   setStatus: (status) => request('/api/status', { method: 'POST', body: JSON.stringify({ status }) }),
   addTask: (payload) => request('/api/tasks', { method: 'POST', body: JSON.stringify(payload) }),
-  setTaskEnabled: (id, enabled) =>
-    request('/api/tasks/enabled', { method: 'POST', body: JSON.stringify({ id, enabled }) }),
-  deleteTask: (id) => request('/api/tasks/delete', { method: 'POST', body: JSON.stringify({ id }) }),
+  addTasksBatch: (items) => request('/api/tasks/batch', { method: 'POST', body: JSON.stringify({ items }) }),
+  setTaskEnabled: (ids, enabled) =>
+    request('/api/tasks/enabled', { method: 'POST', body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [ids], enabled }) }),
+  deleteTask: (ids) => request('/api/tasks/delete', { method: 'POST', body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [ids] }) }),
   saveSendKeys: (raw) => request('/api/send_keys', { method: 'POST', body: JSON.stringify({ raw }) }),
   testAlert: (keys) => request('/api/test_alert', { method: 'POST', body: JSON.stringify({ keys }) }),
   saveMonitorWindow: (start, end) =>
@@ -31,10 +35,34 @@ export const api = {
   saveProxy: (proxy) => request('/api/proxy', { method: 'POST', body: JSON.stringify({ proxy }) }),
   saveSignRefresh: (enabled) =>
     request('/api/sign_refresh', { method: 'POST', body: JSON.stringify({ enabled }) }),
+  savePriceQuery: (enabled, minInterval) =>
+    request('/api/price_query', { method: 'POST', body: JSON.stringify({ enabled, min_interval: minInterval }) }),
   saveTicket: (fareType, raw) =>
     request('/api/ticket', { method: 'POST', body: JSON.stringify({ fare_type: fareType, raw }) }),
   saveFeishu: (payload) => request('/api/feishu', { method: 'POST', body: JSON.stringify(payload) }),
   testFeishu: (payload) => request('/api/feishu/test', { method: 'POST', body: JSON.stringify(payload) }),
+  saveNotifyChannels: (payload) => request('/api/notify/save', { method: 'POST', body: JSON.stringify(payload) }),
+  testNotifyChannel: (channel) => request('/api/notify/test', { method: 'POST', body: JSON.stringify({ channel }) }),
+  clearLog: () => request('/api/log/clear', { method: 'POST', body: JSON.stringify({}) }),
+  flightMeta: () => request('/api/flights/meta'),
+  flightOptions: (params) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString()
+    return request(`/api/flights/options?${qs}`)
+  },
+  flightQuery: (params) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString()
+    return request(`/api/flights/query?${qs}`)
+  },
+  flightPrices: (params) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString()
+    return request(`/api/flights/prices?${qs}`)
+  },
 }
 
 export function formatTs(ts) {
