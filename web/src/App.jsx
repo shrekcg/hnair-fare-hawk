@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   Alert, App as AntApp, Button, Card, Col, Collapse, ConfigProvider, DatePicker, Descriptions, Dropdown, Empty, Form, Input,
   InputNumber, Layout, Menu, Modal, Popconfirm, Popover, Radio, Result, Row, Select, Space, Spin,
-  Statistic, Steps, Switch, Table, Tag, TimePicker, Tooltip, Typography,
+  Statistic, Steps, Switch, Table, Tag, TimePicker, Tooltip, Typography, theme as antdTheme,
 } from 'antd'
 import {
   CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, CompassIcon, DeleteIcon, EditIcon, HistoryIcon, MonitorIcon,
@@ -170,10 +170,10 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
           {/* 标题行：航班号 + 城市（省份） → 城市（省份） */}
           <Space size={6} wrap>
             <span className="mono" style={{ fontWeight: 600 }}>{r.flight || '—'}</span>
-            <span>
-              {cityWithProvince(shortCity(r.from))}
-              <ChevronRightIcon size={11} style={{ color: '#bfbfbf', margin: '0 6px' }} />
-              {cityWithProvince(shortCity(r.to))}
+            <span className="route-line">
+              <span>{cityWithProvince(shortCity(r.from))}</span>
+              <i aria-hidden="true" />
+              <span>{cityWithProvince(shortCity(r.to))}</span>
             </span>
           </Space>
           {/* 起降时间行 */}
@@ -221,41 +221,41 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
   ]
 
   return (
-    <div>
-      <Row gutter={[16, 16]} align="stretch">
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
-            <Statistic
-              title="监控状态"
-              value={running ? '运行中' : '已停止'}
-              valueStyle={{ color: running ? 'var(--color-success)' : '#8c8c8c' }}
-            />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>daemon 按监控时段轮询抓价</div>
-            <Button
-              type={running ? 'default' : 'primary'}
-              icon={running ? <PowerIcon /> : undefined}
-              style={{ marginTop: 'auto' }}
-              onClick={onToggleStatus}
-            >
-              {running ? '停止监控' : '启动监控'}
-            </Button>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
+    <div className="overview">
+      <section className="radar-status" aria-label="监控状态">
+        <div>
+          <div className="radar-eyebrow">ROUTE RADAR / MONITORING</div>
+          <div className="radar-status-title">
+            <span className={`status-orbit ${running ? 'is-running' : ''}`} aria-hidden="true" />
+            {running ? '监控运行中' : '监控已停止'}
+          </div>
+          <div className="radar-status-note">daemon 按已设定时段轮询抓价，命中低价后推送通知。</div>
+        </div>
+        <Button
+          type={running ? 'default' : 'primary'}
+          icon={running ? <PowerIcon /> : undefined}
+          onClick={onToggleStatus}
+        >
+          {running ? '停止监控' : '启动监控'}
+        </Button>
+      </section>
+
+      <Row className="overview-stats" gutter={[16, 16]} align="stretch">
+        <Col xs={24} sm={8}>
           <Card className="stat-card">
             <Statistic title="监控任务" value={stats.task_count} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>启用 {stats.enabled_count} 个</div>
             <Button type="default" style={{ marginTop: 'auto' }} onClick={() => onGo('tasks')}>管理任务</Button>
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
+        <Col xs={24} sm={8}>
+          <Card className="stat-card stat-card-hit">
             <Statistic title="近 24h 命中" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>价格 ≤ 目标价的记录数</div>
             <div className="stat-card-footer" />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={8}>
           <Card className="stat-card">
             <Statistic title="历史记录" value={stats.history_count} />
             <div className="muted" style={{ margin: '4px 0 12px' }}>最近 50 条可查</div>
@@ -275,6 +275,7 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
       )}
 
       <Card
+        className="low-hit-panel"
         style={{ marginTop: 16 }}
         title="最近低价命中（最近 50 条）"
         extra={
@@ -523,10 +524,10 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
           {/* 标题行：航班号 + 城市（省份） → 城市（省份） + 经停/中转 tag */}
           <Space size={6} wrap>
             <span className="mono" style={{ fontWeight: 600 }}>{t.flight_no || '—'}</span>
-            <span>
-              {cityWithProvince(t.from_city)}
-              <ChevronRightIcon size={11} style={{ color: '#bfbfbf', margin: '0 6px' }} />
-              {cityWithProvince(t.to_city)}
+            <span className="route-line">
+              <span>{cityWithProvince(t.from_city)}</span>
+              <i aria-hidden="true" />
+              <span>{cityWithProvince(t.to_city)}</span>
             </span>
             {stopTag(t)}
           </Space>
@@ -2586,26 +2587,44 @@ function History({ data, autoRefresh, setAutoRefresh, msg, refresh }) {
 
 /* ================= App ================= */
 // 全局主题：基于 antd 开源设计 token 的现代化定制（主色/圆角/控件密度），替代默认观感
-const appTheme = {
+const appTheme = (dark) => ({
+  algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
   token: {
-    colorPrimary: '#2f6bff',
-    colorInfo: '#2f6bff',
-    borderRadius: 8,
+    colorPrimary: dark ? '#58B6C8' : '#2A8FA3',
+    colorInfo: dark ? '#58B6C8' : '#2A8FA3',
+    colorSuccess: dark ? '#63C394' : '#2E8B6B',
+    colorWarning: dark ? '#F0BD62' : '#E3A23C',
+    colorError: dark ? '#F2857B' : '#D96257',
+    colorText: dark ? '#E7F0F4' : '#102A43',
+    colorBgLayout: dark ? '#0B1F2D' : '#EDF3F6',
+    colorBorderSecondary: dark ? '#27465A' : '#D8E3E8',
+    borderRadius: 10,
     controlHeight: 34,
   },
   components: {
     Button: { fontWeight: 500 },
-    Card: { borderRadiusLG: 12 },
-    Menu: { itemBorderRadius: 8, itemHeight: 40 },
-    Table: { headerBg: '#f7f8fa' },
+    Card: { borderRadiusLG: 14 },
+    Menu: { itemBorderRadius: 8, itemHeight: 40, horizontalItemBorderRadius: 8 },
+    Table: { headerBg: dark ? '#173243' : '#F4F8FA' },
     Switch: { trackHeight: 22 },
   },
-}
+})
 
 export default function App() {
   const { message } = AntApp.useApp()
   const [tab, setTab] = useState('overview')
   const [historyAuto, setHistoryAuto] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('hna-monitor-theme')
+      if (saved === 'dark' || saved === 'light') return saved === 'dark'
+    } catch (e) { /* localStorage unavailable: follow system preference */ }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false
+  })
+  useEffect(() => {
+    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
+    try { window.localStorage.setItem('hna-monitor-theme', darkMode ? 'dark' : 'light') } catch (e) { /* ignore */ }
+  }, [darkMode])
   // 档位×日期屏蔽规则：事实源为底表 data/sediment/tier_block_rules.json（经 meta 下发），
   // 拉取前用 DEFAULT_TIER_BLOCK_RULES（镜像同一份规则）兜底
   const [tierBlockRules, setTierBlockRules] = useState(DEFAULT_TIER_BLOCK_RULES)
@@ -2655,34 +2674,38 @@ export default function App() {
   }
 
   return (
-    <ConfigProvider theme={appTheme}>
-    <Layout style={{ minHeight: '100vh' }}>
+    <ConfigProvider theme={appTheme(darkMode)}>
+    <Layout className="app-shell" style={{ minHeight: '100vh' }}>
       <Layout.Header className="app-header">
-        <Row align="middle" justify="space-between" style={{ height: '100%' }}>
-          <Col>
-            <Space size={10}>
-              <BrandIcon size={22} style={{ color: 'var(--color-primary)' }} />
-              <span className="brand">海航监控</span>
-            </Space>
-          </Col>
-          <Col>
-            <Space>
-              <Tag color={data.config.status === 'running' ? 'green' : 'default'}>
-                <span className="status-dot" style={{ background: data.config.status === 'running' ? '#52c41a' : '#bfbfbf' }} />
-                {data.config.status === 'running' ? '监控运行中' : '监控已停止'}
-              </Tag>
-            </Space>
-          </Col>
-        </Row>
+        <div className="command-bar">
+          <div className="brand-lockup">
+            <BrandIcon size={22} aria-hidden="true" />
+            <span className="brand">海航监控</span>
+            <span className="brand-mode">航线雷达台</span>
+          </div>
+          <Menu
+            className="app-menu"
+            mode="horizontal"
+            selectedKeys={[tab]}
+            items={TABS}
+            onClick={({ key }) => setTab(key)}
+            aria-label="主导航"
+          />
+          <Tag className="command-status" color={data.config.status === 'running' ? 'green' : 'default'}>
+            <span className="status-dot" style={{ background: data.config.status === 'running' ? 'var(--color-success)' : '#8DA0AA' }} />
+            {data.config.status === 'running' ? '运行中' : '已停止'}
+          </Tag>
+          <Button
+            type="text"
+            className="theme-toggle"
+            aria-label={darkMode ? '切换为浅色主题' : '切换为暗色主题'}
+            aria-pressed={darkMode}
+            onClick={() => setDarkMode((v) => !v)}
+          >
+            {darkMode ? '浅色' : '暗色'}
+          </Button>
+        </div>
       </Layout.Header>
-
-      <Menu
-        className="app-menu"
-        mode="horizontal"
-        selectedKeys={[tab]}
-        items={TABS}
-        onClick={({ key }) => setTab(key)}
-      />
 
       <Layout.Content className="app-content">
         {/* 所有 tab 常驻挂载、display 切换，避免切 tab 丢失组件内状态（查询结果/表单/勾选等） */}

@@ -23,7 +23,7 @@
 - 每轮收尾：更新 README（结构性变化）/ PROJECT_NOTES（进度条目）/ AGENT_HANDOFF（§1 快照与机制如有变化），并更新 agent 侧记忆；然后 git 提交，最后 `git status` 干净。
 - 敏感约束：任何输出不回显完整凭证（SendKey 掩码、AppSecret 永不回显、票据摘要去 query）；不读 `.project_config.toml` / `.vault.toml`。
 
-**当前基线（2026-09-04，第 8 轮后）**：pytest 180 passed；pnpm build 产物 `web/dist/assets/index-BunzIT-l.js`；git HEAD `b10878c`；遗留事项见 AGENT_HANDOFF.md §7（如有不明，先读文档再问用户，不猜）。
+**当前基线（2026-09-04，第 9 轮后）**：pytest 180 passed；pnpm build 产物 `web/dist/assets/index-DEzNlizm.js` / `index-B3yj8J2O.css`；git HEAD 为第 9 轮航线雷达台视觉优化提交（以 `git log` 为准）；遗留事项见 AGENT_HANDOFF.md §7（如有不明，先读文档再问用户，不猜）。
 
 开始工作后，按用户指令执行；每轮交付用中文，结论先行，复杂任务收尾四段：做了什么 / 验证了什么 / 遗留限制与风险 / 是否更新了记忆。
 

@@ -6,7 +6,7 @@
 
 ---
 
-## 1. 项目快照（2026-09-04，第 8 轮迭代后）
+## 1. 项目快照（2026-09-04，第 9 轮迭代后）
 
 - **是什么**：海航随心飞（666/2666 会员专享价）机票低价监控 + 航线查询控制台。监控任务命中低价（≤199 元）自动推微信/飞书等渠道通知；航线查询基于底表静态数据 + 官方实时查价。
 - **路径**：`/Users/Wcg/Desktop/Project_local/海航监控`（用户桌面，会持续迭代）
@@ -15,8 +15,8 @@
 - **服务进程（以 `pgrep -fl "daemon.py|web_api.py"` 为准，pid 文件常过期）**：
   - web_api：bash 包装 94671 + Python 94753（第 7 轮重启）
   - daemon：bash 包装 70405 + Python 70487（状态当前为 stopped 待机属既有设计）
-- **git HEAD**：`b10878c`（feat: 第 8 轮迭代 — 移除 3666 档位 + 日期仅限当天及以后 + 去任务列表头部说明），工作区干净
-- **验证基线**：pytest 180 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-BunzIT-l.js`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **git HEAD**：第 9 轮航线雷达台视觉优化提交（以 `git log` 为准），工作区干净
+- **验证基线**：pytest 180 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-DEzNlizm.js` / `index-B3yj8J2O.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
 
 ---
 
@@ -24,8 +24,8 @@
 
 | 路径 | 作用 |
 |---|---|
-| `web/src/App.jsx` (~2718 行) | 全部前端页面/组件（多 tab 常驻挂载，display:none 切换） |
-| `web/src/styles.css` | 全局样式 + 暗色主题（`[data-theme='dark']` 前缀）；班期日历 cal-* 系列 |
+| `web/src/App.jsx` (~2741 行) | 全部前端页面/组件（多 tab 常驻挂载，display:none 切换；command bar 与主题切换） |
+| `web/src/styles.css` | 航线雷达台全局样式、浅/暗色 token、响应式与 reduced-motion；班期日历 cal-* 系列 |
 | `web/src/icons.jsx` / `cityProvince.js` | lucide 图标包装 / 175 城省份映射 |
 | `web_api.py` | HTTP API：/api/tasks/*、/api/flights/*、/api/notify/*、/api/price_query 等；`_build_state`/`_build_task_rows` 组装页面状态 |
 | `daemon.py` | 监控主循环：任务展开/查价/阈值命中/渠道通知；queried 缓存、任务错峰 |
@@ -77,7 +77,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 - **监控任务**：`tasks.json`（不入库）；同航线+航班号+起降时刻分组、日期合并且行内展示最多 4 个+「+N」；任务不能手动建，只能从航线查询批转/编辑/启停/删除。
 - **通知**：7 渠道（微信 Server酱/企业微信/钉钉/Bark/ntfy/飞书）；important 加急默认开、critical 强制全渠道 + 通知历史；飞书长连接 `feishu_ws.py` 收卡片回执；**加急权限 `im:message.urgent` 已于 2026-09-04 由用户开通**（遗留关闭）。
 - **观测/校正优先级**：实时观测（海航查价）> 第三方校正（落底表）> 旧静态；价格/班期/可飞日期**绝不回写**。
-- **前端结构**：六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；查价频控锁（前端锁 + 后端 min_interval+429）。
+- **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；浅/暗主题跟随系统并可手动切换；查价频控锁（前端锁 + 后端 min_interval+429）。
 
 ---
 

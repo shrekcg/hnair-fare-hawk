@@ -126,6 +126,12 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - **日期限制「只能查/显示当天及以后」**（今天的日期不允许选早于今天）：航线查询单日/区间选择器加 `disabledDate` 禁过去；班期日历新增「已过期」状态——过去日期灰底 + not-allowed、无 ✓、tooltip「已过期（仅可查看当天及以后）」，图例新增灰点（`.cal-cell-past` / `.cal-dot-past`，含暗色主题）；批转弹窗日期池（openBatch 生成 + 档位条件 onChange 重算）与编辑弹窗日期池（dateOptions + 联动 useEffect + editRow 兜底池）统一按 `todayStr` 过滤过去日期。后端 `query()` 不加强制，避免测试随真实日期推移挂掉（限制全在前端入口）。
   - 去掉监控任务列表头部说明文字「15 秒自动刷新 · 同一航班多个监控日期已合并；不同航班分别成条」，「去航线查询添加」按钮保留。
   - 验证：pnpm build OK（dist/index-BunzIT-l.js，产物中 3666 出现 0 次、含「已过期」文案）、pytest 180 passed（后端未动）、运行中 web_api 直接服务新产物无需重启。git 提交见提交记录。
+- [x] **第 9 轮迭代（2026-09-04，航线雷达台视觉优化）**：
+  - 顶部双层白色导航合并为紧凑 command bar，保留六个 tab 常驻挂载与原有导航行为；新增「航线雷达台」品牌副标与运行状态。
+  - 总览新增深海墨监控状态带，统计卡和低价命中区块重排；任务/总览航线字段复用航段状态线；统一面板、表格、控件、标签和日志的颜色/边框/间距层级。
+  - 新增航线雷达台浅色/暗色 token，主题默认跟随系统偏好并支持顶栏手动切换；暗色同步 AntD darkAlgorithm；补齐键盘 focus、reduced-motion、移动端导航/表格横向滚动/表单堆叠。
+  - 未改 API、业务规则、查价频控、通知/票据脱敏、日期/档位/余票逻辑；未新增依赖，运行中 web_api 直接服务新前端产物，无需重启。
+  - 验证：pnpm build OK（dist/index-DEzNlizm.js / index-B3yj8J2O.css）；git diff --check OK；既有 Playwright 冒烟全部通过；主题切换与暗色空表格/状态带专项检查通过。提交见 Git 历史。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 
