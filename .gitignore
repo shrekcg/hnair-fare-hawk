@@ -53,3 +53,6 @@ data/sediment/snapshots/
 data/sediment/observations.json
 data/sediment/sync_from_price_api_progress.json
 data/sediment/progress_reporter_state.json
+
+# 前端评审缓存（工具产物）
+.impeccable/

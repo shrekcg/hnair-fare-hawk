@@ -6,17 +6,19 @@
 
 ---
 
-## 1. 项目快照（2026-09-04，第 9 轮迭代后）
+## 1. 项目快照（2026-09-04，第 10 轮迭代后）
 
 - **是什么**：海航随心飞（666/2666 会员专享价）机票低价监控 + 航线查询控制台。监控任务命中低价（≤199 元）自动推微信/飞书等渠道通知；航线查询基于底表静态数据 + 官方实时查价。
 - **路径**：`/Users/Wcg/Desktop/Project_local/海航监控`（用户桌面，会持续迭代）
 - **技术栈**：前端 React + Vite + Ant Design 5（`web/`，lucide-react 图标）；后端为纯标准库 HTTP API `web_api.py`（托管静态文件 + 业务路由），监控循环 `daemon.py`；Python venv `.venv/bin/python`（3.14）
 - **端口**：8501，仅绑定 127.0.0.1
-- **服务进程（以 `pgrep -fl "daemon.py|web_api.py"` 为准，pid 文件常过期）**：
-  - web_api：bash 包装 94671 + Python 94753（第 7 轮重启）
-  - daemon：bash 包装 70405 + Python 70487（状态当前为 stopped 待机属既有设计）
-- **git HEAD**：第 9 轮航线雷达台视觉优化提交（以 `git log` 为准），工作区干净
-- **验证基线**：pytest 180 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-DEzNlizm.js` / `index-B3yj8J2O.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **服务进程（以 `pgrep -fl "daemon.py|web_api.py|sync_from_price_api|progress_reporter"` 为准，pid 文件常过期）**：
+  - web_api：bash 包装 33125 + Python 33207（第 10 轮重启）
+  - daemon：bash 包装 33213 + Python 33296（第 10 轮重启，监控 2 条任务）
+  - 自扫：bash 包装 44415 + Python 44497（`--supervised --interval 60`，进度约 80%，输出见 `/tmp/autoscan.log`）
+  - 进度汇报 watchdog：bash 包装 17608 + Python 17690（`progress_reporter.py`，每 10% 节点推飞书）
+- **git HEAD**：`188b207`（feat: 第 9 轮迭代补遗 — Graphite Night 主题重构；前一提交 `9ff7736` 观测库价格快照落库），工作区干净
+- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-CD0Gzw_d.js` / `index-BsQlC47A.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
 
 ---
 
@@ -76,7 +78,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 - **档位×日期规则**：`data/sediment/tier_block_rules.json` 单一事实源 → `sediment.meta()` 下发 → 前端 `DEFAULT_TIER_BLOCK_RULES` 兜底；`filterTierDates()` 三处调用（编辑弹窗 x2、批转弹窗 x2）。**日期限制（只能当天及以后）只在前端做**，后端 query() 不加强制（避免测试随真实日期推移挂掉）。
 - **监控任务**：`tasks.json`（不入库）；同航线+航班号+起降时刻分组、日期合并且行内展示最多 4 个+「+N」；任务不能手动建，只能从航线查询批转/编辑/启停/删除。
 - **通知**：7 渠道（微信 Server酱/企业微信/钉钉/Bark/ntfy/飞书）；important 加急默认开、critical 强制全渠道 + 通知历史；飞书长连接 `feishu_ws.py` 收卡片回执；**加急权限 `im:message.urgent` 已于 2026-09-04 由用户开通**（遗留关闭）。
-- **观测/校正优先级**：实时观测（海航查价）> 第三方校正（落底表）> 旧静态；价格/班期/可飞日期**绝不回写**。
+- **观测/校正优先级**：实时观测（海航查价）> 第三方校正（落底表）> 旧静态；班期/可飞日期**绝不回写**。实时观测的价格/会员档位/舱位/余票会落观测库 `data/sediment/observations.json` 的 `price_snapshot` 子对象（带 `queried_at` 时效值，新查询覆盖更新、无价格时保留旧快照），只作历史参考、**绝不回写底表**；`apply_to_record` 仍只消费时刻类字段。
 - **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；浅/暗主题跟随系统并可手动切换；查价频控锁（前端锁 + 后端 min_interval+429）。
 
 ---
@@ -84,7 +86,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 ## 5. Git 边界
 
 **入库**：源码、测试、底表静态数据（flights_normalized.json、tier_block_rules.json）、文档。
-**不入库（.gitignore，动态运行数据/凭证）**：`config.json`（票据/通知/时段）、`tasks.json`、`runtime_state.json`、`notification_history.jsonl`、`price_history.jsonl`、`run_log.txt`、`*.pid`、`*.bak`、`web/dist/`、`web/node_modules/`、`.private/`、`参考资料/`（各带 .git 可独立更新）、`data/sediment/observations.json`、`data/sediment/sync_from_price_api_progress.json`、`data/sediment/snapshots/`。
+**不入库（.gitignore，动态运行数据/凭证）**：`config.json`（票据/通知/时段）、`tasks.json`、`runtime_state.json`、`notification_history.jsonl`、`price_history.jsonl`、`run_log.txt`、`*.pid`、`*.bak`、`web/dist/`、`web/node_modules/`、`.private/`、`参考资料/`（各带 .git 可独立更新）、`data/sediment/observations.json`、`data/sediment/sync_from_price_api_progress.json`、`data/sediment/progress_reporter_state.json`（watchdog 断点）、`data/sediment/snapshots/`、`.impeccable/`（前端评审缓存）。
 **敏感约束**：任何输出不回显完整凭证（SendKey 掩码、AppSecret 永不回显、票据摘要去 query）；绝不读 `.project_config.toml` / 任何 `.vault.toml`。
 
 ---
@@ -137,7 +139,9 @@ lsof -nP -i :8501   # 端口占用/连接状况
 
 - **「去航线查询添加」按钮**：第 8 轮只删了头部说明文字、按钮保留；用户原话有歧义，若指按钮需再确认。
 - **规则近似值**：春运区间（02-02~03-13）为 2026 农历近似换算；五一/暑运/十一为法定±1 天，航季外不影响当前选择。
-- **可选**：观测固化/自扫续跑（`scripts/sedimentation/sync_from_price_api.py`，默认 60s 间隔，全量约 21.6h）；正常票据监控在 daemon 开启后生效。
+- **自扫**：`scripts/sedimentation/sync_from_price_api.py --supervised --interval 60` 后台续跑中（约 80.6%，输出 `/tmp/autoscan.log`）；全量约 21.6h。
+  - **已知特性**：empty 任务会进 failed 并反复重试（脚本 empty 分支未置 task_done，与注释「empty 视为完成」不符）——BAR→HAK 等空航线被重试属正常，不阻塞整体进度。
+  - **待用户拍板**：是否 `--reset-progress` 全量补扫一轮（约 21.6h），补齐已扫过部分（约 80.6%）的价格快照；不补则这些历史任务无 `price_snapshot`。
 
 ---
 
