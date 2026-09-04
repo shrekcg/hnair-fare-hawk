@@ -12,6 +12,8 @@
   --color-border: #D6DBD9;
   --color-muted: #68737A;
   --color-strong-surface: #252B32;
+  --color-on-strong: #F4F6F7;
+  --color-on-strong-muted: #B7C0C7;
   --color-disabled: #A6AFB3;
   --shadow-panel: 0 8px 24px rgba(32, 38, 44, 0.06);
   --shadow-raised: 0 14px 32px rgba(20, 23, 27, 0.14);
@@ -30,9 +32,26 @@
   --color-border: #39434C;
   --color-muted: #AAB4BC;
   --color-strong-surface: #252B32;
+  --color-on-strong: #EAEEF1;
+  --color-on-strong-muted: #A4AFB6;
   --color-disabled: #6E7981;
   --shadow-panel: 0 10px 26px rgba(0, 0, 0, 0.2);
   --shadow-raised: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-item,
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-submenu-title {
+  color: var(--color-muted);
+}
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-item:hover,
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-item-selected,
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-submenu-selected,
+[data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-submenu:hover {
+  color: var(--color-primary);
+}
+[data-theme='dark'] .app-shell .ant-statistic-title,
+[data-theme='dark'] .app-shell .ant-empty-description,
+[data-theme='dark'] .app-shell .ant-typography-secondary {
+  color: var(--color-muted);
 }
 
 * { box-sizing: border-box; }
@@ -113,11 +132,11 @@ body {
 
 /* Overview */
 .overview { display: grid; gap: 16px; }
-.radar-status { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 142px; padding: 24px 28px; color: var(--color-ink); background: var(--color-strong-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-runway); border-radius: 14px; box-shadow: var(--shadow-raised); }
-.radar-eyebrow { margin-bottom: 7px; color: var(--color-primary); font-size: 11px; font-weight: 750; letter-spacing: 0.12em; }
+.radar-status { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 142px; padding: 24px 28px; color: var(--color-on-strong); background: var(--color-strong-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-runway); border-radius: 14px; box-shadow: var(--shadow-raised); }
+.radar-eyebrow { margin-bottom: 7px; color: var(--color-on-strong-accent, var(--color-primary)); font-size: 11px; font-weight: 750; letter-spacing: 0.12em; }
 .radar-status-title { display: flex; align-items: center; gap: 10px; font-size: 25px; font-weight: 720; line-height: 1.2; }
-.radar-status-note { margin-top: 8px; color: var(--color-muted); font-size: 13px; }
-.radar-status .ant-btn { min-width: 108px; color: var(--color-ink); border-color: var(--color-border); background: transparent; }
+.radar-status-note { margin-top: 8px; color: var(--color-on-strong-muted); font-size: 13px; }
+.radar-status .ant-btn { min-width: 108px; color: var(--color-on-strong); border-color: var(--color-border); background: transparent; }
 .radar-status .ant-btn-primary { color: #14201E; border-color: var(--color-primary); background: var(--color-primary); }
 .status-orbit { width: 12px; height: 12px; border: 3px solid var(--color-disabled); border-radius: 50%; box-shadow: 0 0 0 4px rgba(170, 180, 188, 0.14); }
 .status-orbit.is-running { border-color: var(--color-success); box-shadow: 0 0 0 4px rgba(122, 209, 154, 0.16); }

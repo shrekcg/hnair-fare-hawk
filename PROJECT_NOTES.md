@@ -138,6 +138,10 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - **评估结论（哪些实时字段适合落库）**：价格 ✅（相对稳定、历史参考价值大，核心目的）；会员档位 tiers ✅（666/2666，低价监控目标档位）；舱位 cabins ✅（与价格强关联，附存）；余票 seats ⚠️（**仅作带时效快照参考，无预测价值**，不作为依据）；折扣率/优惠价 ❌（接口当前未提取该字段，如需要后续扩展 fetcher）。
   - 运维：改动 `observations.py` 后按规范重启 web_api/daemon/自扫（自扫以 `--supervised --interval 60` 续扫，进度断点续传）；自扫输出改走 `/tmp/autoscan.log`（`-u` 无缓冲，便于观察）。
   - 验证：pytest 181 passed（新增 `test_record_fares_price_snapshot`）；web_api `/api/state` 冒烟 OK；端到端价格快照落库 OK。提交见 Git 历史。
+- [x] **第 9 轮补遗·文字可读性修复（2026-09-04，纯前端 CSS）**：
+  - 承接 Graphite Night 主题，修复两处对比度问题：①浅色主题总览深色状态带内正文误用深色 ink（对比约 1.2:1，几乎不可读）——新增 `--color-on-strong` / `--color-on-strong-muted` 语义 token，浅色主题下状态带文字、说明与面板按钮统一用亮色系；②暗色主题 antd `colorTextTertiary` 的 45% 白在 12px 辅助文字上偏暗——暗色下 `.ant-typography-secondary`、`.ant-statistic-title`、`.ant-empty-description` 统一走 `--color-muted`，统计卡/空状态/表内说明达到约 7.5:1。
+  - 暗色菜单项由统一 primary 色改回 muted 默认 + 选中/hover primary，导航层级更清晰；浅色主题浅底文字对比恢复（正文约 13:1、次要约 7.5:1）。
+  - 仅改 `web/src/styles.css`；未动业务/API/布局；验证：pnpm build OK（index-C3UEApjP.css / index-Bg0buQvw.js）、Playwright 浅色+暗色+移动端（390px）对比度采样与截图通过、移动端无页面横向溢出、console 0 错误；web_api 无需重启。提交见 Git 历史。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 

@@ -18,7 +18,7 @@
   - 自扫：bash 包装 44415 + Python 44497（`--supervised --interval 60`，进度约 80%，输出见 `/tmp/autoscan.log`）
   - 进度汇报 watchdog：bash 包装 17608 + Python 17690（`progress_reporter.py`，每 10% 节点推飞书）
 - **git HEAD**：`188b207`（feat: 第 9 轮迭代补遗 — Graphite Night 主题重构；前一提交 `9ff7736` 观测库价格快照落库），工作区干净
-- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-CD0Gzw_d.js` / `index-BsQlC47A.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-Bg0buQvw.js` / `index-C3UEApjP.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
 
 ---
 
