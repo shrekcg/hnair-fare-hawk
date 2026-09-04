@@ -6,7 +6,8 @@ import {
 } from 'antd'
 import {
   CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, CompassIcon, DeleteIcon, EditIcon, HistoryIcon, MonitorIcon,
-  NotifyIcon, OverviewIcon, PlusIcon, PowerIcon, QuestionIcon, SendIcon, SettingsIcon, TasksIcon, BrandIcon,
+ NotifyIcon, OverviewIcon, PlusIcon, PowerIcon, QuestionIcon, SendIcon, SettingsIcon, TasksIcon, BrandIcon,
+ RadarIcon, TargetIcon,
 } from './icons.jsx'
 import dayjs from 'dayjs'
 import { api, formatTs } from './api.js'
@@ -223,42 +224,64 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
   return (
     <div className="overview">
       <section className="radar-status" aria-label="监控状态">
-        <div>
+        <div className="radar-ico"><RadarIcon /></div>
+        <div className="radar-body">
           <div className="radar-eyebrow">ROUTE RADAR / MONITORING</div>
           <div className="radar-status-title">
             <span className={`status-orbit ${running ? 'is-running' : ''}`} aria-hidden="true" />
             {running ? '监控运行中' : '监控已停止'}
           </div>
           <div className="radar-status-note">daemon 按已设定时段轮询抓价，命中低价后推送通知。</div>
+          <div className="radar-meta">
+            <span className="mono">127.0.0.1:8501</span>
+            <span>监控任务 {stats.task_count} · 启用 {stats.enabled_count}</span>
+          </div>
         </div>
-        <Button
-          type={running ? 'default' : 'primary'}
-          icon={running ? <PowerIcon /> : undefined}
-          onClick={onToggleStatus}
-        >
-          {running ? '停止监控' : '启动监控'}
-        </Button>
+        <div className="radar-action">
+          <Button
+            type={running ? 'default' : 'primary'}
+            icon={running ? <PowerIcon /> : undefined}
+            onClick={onToggleStatus}
+          >
+            {running ? '停止监控' : '启动监控'}
+          </Button>
+        </div>
       </section>
 
       <Row className="overview-stats" gutter={[16, 16]} align="stretch">
         <Col xs={24} sm={8}>
           <Card className="stat-card">
-            <Statistic title="监控任务" value={stats.task_count} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>启用 {stats.enabled_count} 个</div>
+            <div className="stat-row">
+              <span className="stat-ico blue"><TasksIcon /></span>
+              <div className="stat-body">
+                <Statistic title="监控任务" value={stats.task_count} />
+                <div className="muted">启用 {stats.enabled_count} 个</div>
+              </div>
+            </div>
             <Button type="default" style={{ marginTop: 'auto' }} onClick={() => onGo('tasks')}>管理任务</Button>
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card className="stat-card stat-card-hit">
-            <Statistic title="低价命中记录" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>命中监控目标价的提醒条数（档位 666/2666，近 50 条样本）</div>
+            <div className="stat-row">
+              <span className="stat-ico green"><TargetIcon /></span>
+              <div className="stat-body">
+                <Statistic title="低价命中记录" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
+                <div className="muted">命中监控目标价的提醒条数（档位 666/2666，近 50 条样本）</div>
+              </div>
+            </div>
             <div className="stat-card-footer" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card className="stat-card">
-            <Statistic title="历史记录" value={stats.history_count} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>运行日志实时查询（最近 200 行），低价记录最近 50 条</div>
+            <div className="stat-row">
+              <span className="stat-ico gray"><HistoryIcon /></span>
+              <div className="stat-body">
+                <Statistic title="历史记录" value={stats.history_count} />
+                <div className="muted">运行日志实时查询（最近 200 行），低价记录最近 50 条</div>
+              </div>
+            </div>
             <Button type="default" style={{ marginTop: 'auto' }} onClick={() => onGo('history')}>查看历史</Button>
           </Card>
         </Col>
@@ -2633,22 +2656,23 @@ function History({ data, autoRefresh, setAutoRefresh, msg, refresh }) {
 const appTheme = (dark) => ({
   algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
   token: {
-    colorPrimary: dark ? '#6BC8B5' : '#317D70',
-    colorInfo: dark ? '#6BC8B5' : '#317D70',
-    colorSuccess: dark ? '#7AD19A' : '#287451',
-    colorWarning: '#F0BC67',
-    colorError: '#F28C82',
-    colorText: dark ? '#F1F4F6' : '#20262C',
-    colorBgLayout: dark ? '#14171B' : '#F4F5F4',
-    colorBorderSecondary: dark ? '#39434C' : '#D6DBD9',
-    borderRadius: 10,
+    colorPrimary: dark ? '#5B9BD3' : '#0054A6',
+    colorInfo: dark ? '#5B9BD3' : '#0054A6',
+    colorSuccess: dark ? '#4FAE77' : '#2D9D5F',
+    colorWarning: dark ? '#E0A849' : '#B26E00',
+    colorError: dark ? '#E56B61' : '#D63939',
+    colorText: dark ? '#E6EDF3' : '#1A2333',
+    colorBgLayout: dark ? '#10151B' : '#F6F8FB',
+    colorBorderSecondary: dark ? '#2A3442' : '#E4E9F0',
+    borderRadius: 8,
     controlHeight: 34,
   },
   components: {
-    Button: { fontWeight: 500 },
+    Button: { fontWeight: 600 },
     Card: { borderRadiusLG: 14 },
+    Card: { borderRadiusLG: 12 },
     Menu: { itemBorderRadius: 8, itemHeight: 40, horizontalItemBorderRadius: 8 },
-    Table: { headerBg: dark ? '#252B32' : '#EDF0EE' },
+    Table: { headerBg: dark ? '#1D2630' : '#F1F4F9' },
     Switch: { trackHeight: 22 },
   },
 })

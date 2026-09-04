@@ -18,7 +18,7 @@
   - 自扫：bash 包装 54850 + Python 54934（`--supervised --interval 60`，reset 后全量重扫第 1 轮，输出见 `/tmp/autoscan.log`）
   - 进度汇报 watchdog：bash 包装 17608 + Python 17690（`progress_reporter.py`，每 10% 节点推飞书）
 - **git HEAD**：`2689bb3`（feat: 监控任务航线/起降时间加粗加深）；此前依次为 `f198573`（浏览器评审 6 条：状态带调浅/ghost 按钮文字/票据卡片布局/提示可关闭/统计卡语义）与 `7ab77d7`（Graphite Night 文字可读性修复），工作区干净
-- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-BsaoFcvD.js` / `index-6perWR6R.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-EoD038pb.js` / `index-BGCU1E9S.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
 
 ---
 
@@ -79,7 +79,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 - **监控任务**：`tasks.json`（不入库）；同航线+航班号+起降时刻分组、日期合并且行内展示最多 4 个+「+N」；任务不能手动建，只能从航线查询批转/编辑/启停/删除。
 - **通知**：7 渠道（微信 Server酱/企业微信/钉钉/Bark/ntfy/飞书）；important 加急默认开、critical 强制全渠道 + 通知历史；飞书长连接 `feishu_ws.py` 收卡片回执；**加急权限 `im:message.urgent` 已于 2026-09-04 由用户开通**（遗留关闭）。
 - **观测/校正优先级**：实时观测（海航查价）> 第三方校正（落底表）> 旧静态；班期/可飞日期**绝不回写**。实时观测的价格/会员档位/舱位/余票会落观测库 `data/sediment/observations.json` 的 `price_snapshot` 子对象（带 `queried_at` 时效值，新查询覆盖更新、无价格时保留旧快照），只作历史参考、**绝不回写底表**；`apply_to_record` 仍只消费时刻类字段。
-- **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；Graphite Night 浅/暗主题（中性石墨 + 薄荷主色，非偏蓝）跟随系统并可手动切换；浅色主题总览状态带为浅石墨深底 + 亮字（`--color-on-strong*` 面板专用 token）；ghost 主按钮须排除全局背景覆盖（`:not(.ant-btn-background-ghost)`）；监控任务表航线/起降时间加粗加深；统计卡文案与「观测/命中」语义对齐；查价频控锁（前端锁 + 后端 min_interval + 429）。
+- **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；视觉对齐「个人工作台 V0.4」（Tabler 浅色专业后台）；浅/暗双主题同构，暗色为深色派生，主色 #0054A6 / #5B9BD3；ghost 主按钮须排除全局背景覆盖（`:not(.ant-btn-background-ghost)`）；监控任务表航线/起降时间加粗加深；统计卡文案与「观测/命中」语义对齐；查价频控锁（前端锁 + 后端 min_interval + 429）。
 
 ---
 

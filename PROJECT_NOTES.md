@@ -156,6 +156,8 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 
+- [x] **视觉系统对齐「个人工作台 V0.4」（2026-09-04）**：
+
 1. **PLUS 抓包接口抓错了**：用户抓的是 `airCtLowFareSearch`（普通低价接口），对该接口 PLUS 查询恒返回 `0903 无航班`。
    **正确的 PLUS 端点固定为 `https://app.hnair.com/ticket/lfs/ffl/airLowFareSearch`**（fetcher 模板里原本就有），
    已在 `backend/fetcher.py` 的 `_build_request_profile` 中对 plus 强制使用该 URL（2026-09-02 提交）。
@@ -180,3 +182,7 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
 
 - 需要用户本人操作的事（官方登录/验证码/微信扫码/复制 SendKey）**不能由 agent 代办**，agent 负责给出步骤并协助排查。
 - 凭证失效后：用户重新抓 cURL 覆盖本地文件 → 让 agent 重新导入并重启 daemon → 再验收。
+  - 复制参考系统 token 词汇与组件语言（workbench comp theme.css，参考项目只读未改）：背景 #F6F8FB、白卡片、深蓝主色 #0054A6、次级 #5A6577、辅助 #8B96A8、状态色（绿 #2D9D5F / 琥珀 #B26E00 / 红 #D63939）、圆角 8/12、克制阴影、mono 数据字体、终端块 #0F1419、reduced-motion、强调式布局。
+  - styles.css 重建主题变量：新增参考系统规范 token（bg/surface/primary/success/term-bg/radius/shadow 等），既有 color 系列全部改为别名指向参考值，浅/暗双主题同构（暗色为同一系统深色派生，主色 #5B9BD3），移除旧石墨绿 token。
+  - 总览深色状态带改为「重点服务强调卡」（浅蓝渐变 + 深蓝雷达图标 + 胶囊眉题 + mono 元数据 127.0.0.1:8501 + 主操作按钮 + 呼吸状态点）；统计卡改「图标块（蓝/绿/灰）+ 大数字 + 标签」；Tag 状态色对齐参考色板；日志终端块改 #0F1419；AntD theme token 同步（主色/圆角 8/表头 #F1F4F9）；新增 Radar/Target 图标。
+  - 验证：pnpm build OK（index-EoD038pb.js / index-BGCU1E9S.css）、Playwright 浅/暗实测（背景、强调卡渐变与边框、呼吸动画、统计卡图标色、mono 元数据、终端块、Tag 色、移动端 390px 无溢出、console 0 错误）。提交见 Git 历史。
