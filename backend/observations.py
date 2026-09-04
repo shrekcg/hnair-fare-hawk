@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -64,12 +64,37 @@ def record(
     arr_terminal: str = "",
     stop: Optional[Dict[str, Any]] = None,
     observed_at: str = "",
+    price: Optional[int] = None,
+    fare_type: str = "normal",
+    tiers: Optional[List[str]] = None,
+    cabins: Optional[List[Dict[str, Any]]] = None,
+    seats: Optional[int] = None,
 ) -> bool:
-    """写入一条观测。同键同日只更新一次；返回是否真正写入。"""
+    """写入一条观测。同键同日只更新一次；返回是否真正写入。
+
+    价格/档位/舱位/余票等实时信息会组装为 ``price_snapshot`` 一并落库：
+    - 带 ``queried_at`` 时效值（本次查询发生时刻），后续查询有内容即覆盖更新；
+    - 目的是在风控/停实时查价后仍有历史价格参考；**不影响**时刻/航站楼/经停覆盖逻辑，
+      ``apply_to_record`` 也只消费时刻类字段，价格绝不回写正式底表；
+    - ``price=None`` 表示本次响应未提供价格，保留旧快照不清空。
+    """
     if not flight_no or not origin_city or not dest_city:
         return False
     key = obs_key(flight_no, origin_city, dest_city)
     today = observed_at or date.today().isoformat()
+    snapshot = None
+    if price is not None:
+        snapshot = {
+            "price": int(price),
+            "fare_type": fare_type,
+            "queried_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        if tiers:
+            snapshot["tiers"] = list(tiers)
+        if cabins:
+            snapshot["cabins"] = list(cabins)
+        if seats is not None:
+            snapshot["seats"] = int(seats)
     changed = False
     with _lock:
         data = _load_locked(force=True)
@@ -83,10 +108,11 @@ def record(
                 and cur.get("dep_terminal") == dep_terminal
                 and cur.get("arr_terminal") == arr_terminal
                 and cur.get("stop") == stop
+                and cur.get("price_snapshot") == snapshot
             )
             if same:
                 return False
-        obs[key] = {
+        entry = {
             "flight_no": flight_no,
             "origin": origin_city,
             "dest": dest_city,
@@ -98,6 +124,12 @@ def record(
             "observed_at": today,
             "source": "price_api",
         }
+        # 本次无价格时保留旧快照（如遇解析缺字段，不丢历史价格）；都没有则不写该字段
+        if snapshot is not None:
+            entry["price_snapshot"] = snapshot
+        elif cur and cur.get("price_snapshot"):
+            entry["price_snapshot"] = cur["price_snapshot"]
+        obs[key] = entry
         data["updated_at"] = f"{today} {date.today().strftime('%H:%M:%S')}"
         _save_locked(data)
         changed = True
@@ -105,7 +137,7 @@ def record(
 
 
 def record_fares(fares: List[Dict[str, Any]], origin_city: str, dest_city: str, observed_at: str = "") -> int:
-    """批量记录一次查价响应中的实时事实（按航班号去重，只取首条 times/stop）。"""
+    """批量记录一次查价响应中的实时事实（按航班号去重，只取首条 times/stop/价格等）。"""
     written = 0
     seen: set[str] = set()
     for fare in fares:
@@ -125,6 +157,11 @@ def record_fares(fares: List[Dict[str, Any]], origin_city: str, dest_city: str, 
             arr_terminal=str(times.get("arr_terminal") or "").strip(),
             stop=stop if isinstance(stop, dict) else None,
             observed_at=observed_at,
+            price=fare.get("price"),
+            fare_type=str(fare.get("fare_type") or "normal"),
+            tiers=fare.get("tiers"),
+            cabins=fare.get("cabins"),
+            seats=fare.get("seats"),
         ):
             written += 1
     return written

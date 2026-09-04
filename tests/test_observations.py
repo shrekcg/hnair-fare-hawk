@@ -48,6 +48,48 @@ def test_record_fares_aggregate(tmp_path, monkeypatch):
     assert data["HU7001|深圳|长春"]["dep_terminal"] == ""
 
 
+def test_record_fares_price_snapshot(tmp_path, monkeypatch):
+    monkeypatch.setattr(obs, "OBS_PATH", tmp_path / "observations.json")
+    fares = [{
+        "flight": "HU7851", "price": 2933,
+        "fare_type": "normal",
+        "tiers": ["2666", "666"],
+        "cabins": [{"cabin": "Z", "qty": 1, "status": "open"}],
+        "seats": 1,
+        "times": {"dep": "07:40", "arr": "11:30"},
+    }]
+    n = obs.record_fares(fares, "深圳", "乌鲁木齐")
+    assert n == 1
+    ob = obs.load(force=True)["observations"]["HU7851|深圳|乌鲁木齐"]
+    snap = ob["price_snapshot"]
+    assert snap["price"] == 2933
+    assert snap["fare_type"] == "normal"
+    assert snap["tiers"] == ["2666", "666"]
+    assert snap["cabins"] == [{"cabin": "Z", "qty": 1, "status": "open"}]
+    assert snap["seats"] == 1
+    assert "queried_at" in snap  # 时效值
+    # 同日相同内容不重复写
+    n2 = obs.record_fares(fares, "深圳", "乌鲁木齐")
+    assert n2 == 0
+    # 同日价格变化会覆盖更新（带新 queried_at）
+    fares[0]["price"] = 2317
+    fares[0]["seats"] = 4
+    n3 = obs.record_fares(fares, "深圳", "乌鲁木齐")
+    assert n3 == 1
+    snap2 = obs.load(force=True)["observations"]["HU7851|深圳|乌鲁木齐"]["price_snapshot"]
+    assert snap2["price"] == 2317
+    assert snap2["seats"] == 4
+    # 无价格时保留旧快照不清空
+    no_price = [{"flight": "HU7851", "times": {"dep": "07:40", "arr": "11:30"}}]
+    obs.record_fares(no_price, "深圳", "乌鲁木齐")
+    ob3 = obs.load(force=True)["observations"]["HU7851|深圳|乌鲁木齐"]
+    assert ob3["price_snapshot"]["price"] == 2317
+    # 纯时刻观测（无价格）不产生 price_snapshot 字段
+    obs.record("Y87531", "深圳", "长春", dep_time="07:40", observed_at="2026-09-05")
+    ob4 = obs.load(force=True)["observations"]["Y87531|深圳|长春"]
+    assert "price_snapshot" not in ob4
+
+
 def test_apply_to_record(tmp_path, monkeypatch):
     monkeypatch.setattr(obs, "OBS_PATH", tmp_path / "observations.json")
     obs.record("Y87531", "深圳", "长春", dep_time="07:40", arr_time="15:50",

@@ -132,6 +132,12 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - 新增航线雷达台浅色/暗色 token，主题默认跟随系统偏好并支持顶栏手动切换；暗色同步 AntD darkAlgorithm；补齐键盘 focus、reduced-motion、移动端导航/表格横向滚动/表单堆叠。
   - 未改 API、业务规则、查价频控、通知/票据脱敏、日期/档位/余票逻辑；未新增依赖，运行中 web_api 直接服务新前端产物，无需重启。
   - 验证：pnpm build OK（dist/index-DEzNlizm.js / index-B3yj8J2O.css）；git diff --check OK；既有 Playwright 冒烟全部通过；主题切换与暗色空表格/状态带专项检查通过。提交见 Git 历史。
+- [x] **第 10 轮迭代（2026-09-04，观测库价格快照 + 自扫进度飞书汇报）**：
+  - **观测库新增价格快照**：`backend/observations.py` 的 `record()`/`record_fares()` 从查价响应中提取价格/会员档位(tiers)/舱位(cabins)/余票(seats)，以 `price_snapshot` 子对象落 `data/sediment/observations.json`，带 `queried_at` 时效值（查询发生时刻），每次新查询有内容即覆盖更新；无价格时保留旧快照不清空。**价格/余票仅作历史参考快照，绝不回写正式底表**（`apply_to_record` 仍只消费时刻/航站楼/经停）。已验证：端到端手动查价→record_fares→观测库出现 `HU7851|深圳|乌鲁木齐` 价格快照（price 2080、tiers [666,2666]、6 舱位、seats 45）。
+  - **自扫进度飞书汇报 watchdog**：新增 `scripts/sedimentation/progress_reporter.py`，只读进度文件，跨过每 10% 节点（10%~90%）向飞书「鱼票通知」推送完成百分比/失败数/预计剩余时间；带断点（state 文件）不重复发、total 变化自动归零节点；100% 由自扫自身 notify_done 推送。启动后首条「进度汇报开启」已验证送达。
+  - **评估结论（哪些实时字段适合落库）**：价格 ✅（相对稳定、历史参考价值大，核心目的）；会员档位 tiers ✅（666/2666，低价监控目标档位）；舱位 cabins ✅（与价格强关联，附存）；余票 seats ⚠️（**仅作带时效快照参考，无预测价值**，不作为依据）；折扣率/优惠价 ❌（接口当前未提取该字段，如需要后续扩展 fetcher）。
+  - 运维：改动 `observations.py` 后按规范重启 web_api/daemon/自扫（自扫以 `--supervised --interval 60` 续扫，进度断点续传）；自扫输出改走 `/tmp/autoscan.log`（`-u` 无缓冲，便于观察）。
+  - 验证：pytest 181 passed（新增 `test_record_fares_price_snapshot`）；web_api `/api/state` 冒烟 OK；端到端价格快照落库 OK。提交见 Git 历史。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 
