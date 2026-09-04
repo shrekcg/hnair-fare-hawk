@@ -158,6 +158,8 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
 
 - [x] **视觉系统对齐「个人工作台 V0.4」（2026-09-04）**：
 
+- [x] **项目开源化（2026-09-05）**：README 改为开源版（统一仓库名 `hnair-fare-hawk`，快速开始指向真实仓库名）、MIT LICENSE、assets/readme/ 截图与 hero/workflow SVG 入库；`config.example.json` 补全为完整开源模板（feishu / notify_channels / price_query / wechat 等，与 app.py DEFAULT_CONFIG 对齐）；源码硬编码凭证排查：票据走 config.json + HNA_* 环境变量兜底，web_api 凭证脱敏，git 历史无凭证提交。验证：pytest 181 passed（16s）。提交 `0b643c9`。待用户授权：GitHub 建仓 + push。
+
 1. **PLUS 抓包接口抓错了**：用户抓的是 `airCtLowFareSearch`（普通低价接口），对该接口 PLUS 查询恒返回 `0903 无航班`。
    **正确的 PLUS 端点固定为 `https://app.hnair.com/ticket/lfs/ffl/airLowFareSearch`**（fetcher 模板里原本就有），
    已在 `backend/fetcher.py` 的 `_build_request_profile` 中对 plus 强制使用该 URL（2026-09-02 提交）。

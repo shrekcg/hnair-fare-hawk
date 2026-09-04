@@ -6,7 +6,7 @@
 
 ---
 
-## 1. 项目快照（2026-09-04，第 10 轮迭代 + UI 深化收尾后）
+## 1. 项目快照（2026-09-05，开源化收尾后）
 
 - **是什么**：海航随心飞（666/2666 会员专享价）机票低价监控 + 航线查询控制台。监控任务命中低价（≤199 元）自动推微信/飞书等渠道通知；航线查询基于底表静态数据 + 官方实时查价。
 - **路径**：`/Users/Wcg/Desktop/Project_local/海航监控`（用户桌面，会持续迭代）
@@ -17,8 +17,9 @@
   - daemon：bash 包装 33213 + Python 33296（第 10 轮重启，监控 2 条任务）
   - 自扫：bash 包装 54850 + Python 54934（`--supervised --interval 60`，reset 后全量重扫第 1 轮，输出见 `/tmp/autoscan.log`）
   - 进度汇报 watchdog：bash 包装 17608 + Python 17690（`progress_reporter.py`，每 10% 节点推飞书）
-- **git HEAD**：`2689bb3`（feat: 监控任务航线/起降时间加粗加深）；此前依次为 `f198573`（浏览器评审 6 条：状态带调浅/ghost 按钮文字/票据卡片布局/提示可关闭/统计卡语义）与 `7ab77d7`（Graphite Night 文字可读性修复），工作区干净
-- **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-EoD038pb.js` / `index-BGCU1E9S.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **git HEAD**：`0b643c9`（docs: 项目开源化 — README 改为开源版 + MIT LICENSE + 截图资产，统一仓库名 hnair-fare-hawk）；此前为 `69a4838`（第 11 轮迭代 — 视觉系统对齐「个人工作台 V0.4」），工作区仅剩未入库的 `交接恢复稿_2026-09-05.md`（用户放置）
+- **验证基线**：pytest 181 passed（约 16s）；`pnpm build` OK，当前产物 `web/dist/assets/index-EoD038pb.js` / `index-BGCU1E9S.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
+- **开源化状态（2026-09-05）**：README 已改为开源版并统一仓库名 `hnair-fare-hawk`；MIT LICENSE + assets/readme/ 截图已入库；`config.example.json` 已补全为完整模板（feishu / notify_channels / price_query 等）。源码无硬编码凭证（票据走 config.json / HNA_* 环境变量 / 前端配置），git 历史无凭证提交。待用户授权：GitHub 建仓 `hnair-fare-hawk` + 配置远端 + push。
 
 ---
 
@@ -141,7 +142,8 @@ lsof -nP -i :8501   # 端口占用/连接状况
 - **规则近似值**：春运区间（02-02~03-13）为 2026 农历近似换算；五一/暑运/十一为法定±1 天，航季外不影响当前选择。
 - **自扫**：`scripts/sedimentation/sync_from_price_api.py --supervised --interval 60` 后台续跑中（约 80.6%，输出 `/tmp/autoscan.log`）；全量约 21.6h。
   - **已知特性**：empty 任务会进 failed 并反复重试（脚本 empty 分支未置 task_done，与注释「empty 视为完成」不符）——BAR→HAK 等空航线被重试属正常，不阻塞整体进度。
-  - **待用户拍板**：是否 `--reset-progress` 全量补扫一轮（约 21.6h），补齐已扫过部分（约 80.6%）的价格快照；不补则这些历史任务无 `price_snapshot`。
+- **待用户拍板**：是否 `--reset-progress` 全量补扫一轮（约 21.6h），补齐已扫过部分（约 80.6%）的价格快照；不补则这些历史任务无 `price_snapshot`。
+- **待用户拍板**：是否创建 GitHub 仓库 `hnair-fare-hawk` 并推送（对外发布需用户明确同意；push 前再次确认无凭证入库）。
 
 ---
 
