@@ -8,6 +8,7 @@ from typing import Dict, Iterable, List, Optional
 
 import requests
 from city_codes import code_to_city_label, code_to_city_only
+from backend.channels import build_confirm_card, send_feishu  # noqa: E402
 
 
 def _send_serverchan(send_key: str, title: str, desp: str) -> bool:
@@ -46,11 +47,43 @@ def _date_range_str(task: Dict) -> str:
     return f"{date} 至 {date_end}" if date_end and date_end != date else date
 
 
+def tier_text(tiers) -> str:
+    """命中档位展示：如「666/2666（PLUS专享）」；无会员专享产品显示普通可购价。"""
+    if not tiers:
+        return "普通可购价"
+    vals = [str(t).strip() for t in tiers if str(t).strip()]
+    if not vals:
+        return "普通可购价"
+    return "/".join(vals) + "（PLUS专享）"
+
+
+def fake_price_hit_payload() -> tuple[str, str]:
+    """构造一条模拟「真实低价命中」的提醒（假数据，末尾注明），用于测试各通知通道。
+
+    场景：PLUS 专享 666 档命中目标价 —— 与 daemon 真实提醒的字段/排版一致，
+    只是航线与价格是假的，并在末尾标注「模拟数据」。
+    """
+    title = "🎉 上海→三亚 388 元"
+    content = (
+        "航班：HU7655\n"
+        "日期：2026-09-05\n"
+        "航线：上海(SHA) → 三亚(SYX)\n"
+        "类型：PLUS专享（目标 ≤ 400 元，已达标 ✅）\n"
+        "档位：666（PLUS专享）\n"
+        "价格：388 元\n"
+        "余票：9 张\n"
+        "---\n"
+        "⚠️ 模拟数据：仅用于测试通知通道，不影响真实监控"
+    )
+    return title, content
+
+
 def send_price_alert(
     send_keys: Iterable[str],
     task: Dict,
     flight: str,
     price: int,
+    tiers=None,
 ) -> Dict[str, bool]:
     """发送普通低价提醒（微信 Server酱，desp 支持 Markdown）。"""
     keys = _normalize_keys(send_keys)
@@ -70,6 +103,7 @@ def send_price_alert(
         f"**日期**：{_date_range_str(task)}\n\n"
         f"**航线**：{from_city} → {to_city}\n\n"
         f"**类型**：{_fare_label(task.get('fare_type', ''))}（目标价 ≤ {task.get('target_price', '-')} 元 · 已达标 ✅）\n\n"
+        f"**档位**：{tier_text(tiers)}\n\n"
         f"**价格**：**{price} 元**\n\n"
         "---\n\n"
         f"⏰ 查询时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -103,15 +137,20 @@ def send_token_expired_alert(send_keys: Iterable[str], reason: str) -> Dict[str,
 
 
 def send_test_alert(send_keys: Iterable[str]) -> Dict[str, bool]:
-    """发送微信测试消息，帮助用户验证绑定是否成功。"""
+    """发送微信测试消息：模拟一条真实低价命中提醒（假数据已注明），帮助验证绑定。"""
     keys = _normalize_keys(send_keys)
     results: Dict[str, bool] = {}
-    title = "✅ 海航监控：微信渠道测试"
+    title, _ = fake_price_hit_payload()
     desp = (
-        f"如果你收到这条消息，说明**微信通知渠道已配置成功**。\n\n"
-        "后续低价提醒与凭证阻断告警将通过此渠道推送。\n\n"
+        "**航班**：HU7655\n\n"
+        "**日期**：2026-09-05\n\n"
+        "**航线**：上海(SHA) → 三亚(SYX)\n\n"
+        "**类型**：PLUS专享（目标价 ≤ 400 元 · 已达标 ✅）\n\n"
+        "**档位**：666（PLUS专享）\n\n"
+        "**价格**：**388 元**\n\n"
+        "**余票**：9 张\n\n"
         "---\n\n"
-        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        "⚠️ 模拟数据：仅用于测试通知通道，不影响真实监控"
     )
 
     for key in keys:
@@ -244,19 +283,31 @@ def send_feishu_token_alert(feishu_cfg: Dict, reason: str) -> tuple[bool, str]:
     )
 
 
-def test_feishu(app_id: str, app_secret: str, receiver: str) -> tuple[bool, str]:
-    """发送飞书测试消息，验证配置与权限是否就绪。"""
-    title = "✅ 海航监控：飞书渠道测试"
-    content = (
-        "如果你收到这条消息，说明飞书通知渠道已配置成功。\n"
-        "后续低价提醒与凭证阻断告警将通过此渠道推送。\n"
-        "\n"
-        f"⏰ 时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-    return send_feishu_message(
-        str(app_id or "").strip(),
-        str(app_secret or "").strip(),
-        str(receiver or "").strip(),
+def test_feishu(
+    app_id: str, app_secret: str, receiver: str, card: Optional[Dict] = None, urgent: bool = False
+) -> tuple[bool, str, str]:
+    """发送飞书测试消息：默认发可点按钮的交互确认卡片，模拟一条真实低价命中提醒。
+
+    - urgent=True 时按「当前已配置的加急形态」发送（应用内加急）；
+    - card 不传时自动构造默认测试卡片（假数据已注明）；
+    - 返回 (是否成功, 失败原因, message_id)。
+    """
+    title, content = fake_price_hit_payload()
+    if card is None:
+        card = build_confirm_card(
+            title,
+            content,
+            callback_key="test_alert",
+            action_value=str(int(datetime.now().timestamp() * 1000)),
+        )
+    return send_feishu(
+        {
+            "app_id": str(app_id or "").strip(),
+            "app_secret": str(app_secret or "").strip(),
+            "receiver": str(receiver or "").strip(),
+        },
         title,
         content,
+        urgent,
+        card=card,
     )

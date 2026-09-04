@@ -55,10 +55,50 @@ def test_matches_date_range_and_days():
     assert sediment.matches_date(rec, "not-a-date") is False
 
 
+def test_tier_block_rules_loaded(loaded):
+    """档位×日期屏蔽规则文件加载：存在、档位齐全、十一屏蔽区间与 sxfroute 一致。"""
+    rules = sediment.tier_block_rules()
+    assert isinstance(rules, dict) and "tiers" in rules
+    tiers = rules["tiers"]
+    assert "666" in tiers and "2666" in tiers
+    blocks666 = [b for b in tiers["666"]["blocks"]]
+    assert ["2026-09-30", "2026-10-09"] in blocks666  # 2026 十一（国庆法定及前后各一天）
+    assert ["2026-04-30", "2026-05-06"] in blocks666  # 2026 五一
+    assert ["2026-07-01", "2026-08-31"] in blocks666  # 暑运
+    blocks2666 = tiers["2666"]["blocks"]
+    assert ["2026-09-30", "2026-10-09"] not in blocks2666  # 2666 不受国庆限制（sxfroute 同结论）
+    # 缺失文件时的兜底：不抛错、返回空 tiers
+    assert sediment.tier_blocks("不存在档位") == []
+    assert sediment.product_tiers(None) == []
+    assert sediment.product_tiers("all") == []
+    assert sediment.product_tiers("666/2666") == ["666", "2666"]
+
+
+def test_blocked_by_tier():
+    """blocked_by_tier：单日/区间/多档位判断。"""
+    assert sediment.blocked_by_tier("666", date_str="2026-10-03") is True   # 十一屏蔽内
+    assert sediment.blocked_by_tier("666", date_str="2026-10-10") is False  # 屏蔽区间外
+    assert sediment.blocked_by_tier("666", date_str="2026-09-29") is False  # 屏蔽区间前一日
+    assert sediment.blocked_by_tier("2666", date_str="2026-10-03") is False  # 2666 不受国庆限制
+    assert sediment.blocked_by_tier("666/2666", date_str="2026-10-03") is True  # 任一档被屏蔽即 True
+    assert sediment.blocked_by_tier(None, date_str="2026-10-03") is False  # 不限档位不屏蔽
+    assert sediment.blocked_by_tier("666", date_str="2026-07-15") is True  # 暑运（2666 也屏蔽）
+    assert sediment.blocked_by_tier("2666", date_str="2026-07-15") is True
+    # 区间：完全落在屏蔽区间内才屏蔽；部分重叠不屏蔽（由前端按具体日期收窄）
+    assert sediment.blocked_by_tier("666", date_start="2026-10-01", date_end="2026-10-05") is True
+    assert sediment.blocked_by_tier("666", date_start="2026-10-05", date_end="2026-10-15") is False
+    assert sediment.blocked_by_tier("2666", date_start="2026-10-01", date_end="2026-10-05") is False
+    # 2026-10-03 确实是周六（锚点换日依据）
+    import datetime
+    assert datetime.date(2026, 10, 3).isoweekday() == 6
+
+
 def test_query_acceptance_anchor_haikou_666():
-    """验收锚点：海口相关（出发或到达）+ 666 + 2026-10-03。
-    当前底表（v1）约 109 条；验收文件（旧版本）为 112 条，差异来自数据版本更新。"""
-    rows = sediment.query(city="海口", product="666", date_str="2026-10-03", direction="both")
+    """验收锚点：海口相关（出发或到达）+ 666 + 2026-10-10（周六，国庆屏蔽区间外）。
+
+    2026-10-03 原锚点落在 666 档十一屏蔽区间（09-30~10-09）内，按真实规则该档该日不可兑，
+    故锚点移到屏蔽区间外的周六 2026-10-10。当前底表（v1）约 102 条。"""
+    rows = sediment.query(city="海口", product="666", date_str="2026-10-10", direction="both")
     assert len(rows) >= 100
     assert len(rows) <= 120
     # 每条都与海口相关
@@ -67,17 +107,42 @@ def test_query_acceptance_anchor_haikou_666():
     # 每条都匹配 666 档位 + 日期
     for r in rows:
         assert "666" in r["product"].split("/")
-        assert sediment.matches_date(r, "2026-10-03")
-    # 校验 2026-10-03 确实是周六
+        assert sediment.matches_date(r, "2026-10-10")
+    # 校验 2026-10-10 确实是周六
     import datetime
-    assert datetime.date(2026, 10, 3).isoweekday() == 6
+    assert datetime.date(2026, 10, 10).isoweekday() == 6
+
+
+def test_query_tier_date_block():
+    """档位×日期屏蔽：666 在十一屏蔽区间内查不到航班；2666/不限档不受影响。"""
+    # 666 + 10-03（十一屏蔽内）→ 空
+    assert sediment.query(city="海口", product="666", date_str="2026-10-03") == []
+    # 666 + 10-10（屏蔽外）→ 有航班
+    assert sediment.query(city="海口", product="666", date_str="2026-10-10")
+    # 2666 + 10-03 → 有航班（2666 不受国庆限制）
+    assert sediment.query(city="海口", product="2666", date_str="2026-10-03")
+    # 666/2666 + 10-03 → 空（任一档被屏蔽即空，与前端日期池口径一致）
+    assert sediment.query(city="海口", product="666/2666", date_str="2026-10-03") == []
+    # 不限档位 + 10-03 → 有航班（屏蔽只看指定档位）
+    assert sediment.query(city="海口", date_str="2026-10-03")
+    # 区间完全落在屏蔽内 → 空；部分重叠 → 保留（前端再按具体日期收窄）
+    assert sediment.query(city="海口", product="666", date_start="2026-10-01", date_end="2026-10-05") == []
+    assert sediment.query(city="海口", product="666", date_start="2026-10-05", date_end="2026-10-15")
+
+
+def test_meta_includes_tier_block_rules():
+    """meta() 下发 tier_block_rules 字段（前端日期选择事实源）。"""
+    m = sediment.meta()
+    rules = m["tier_block_rules"]
+    assert "source" in rules and "notes" in rules and "tiers" in rules
+    assert [b for b in rules["tiers"]["666"]["blocks"]].count(["2026-09-30", "2026-10-09"]) == 1
 
 
 def test_query_from_to_direction():
-    # 海口出发 vs 到达 应互斥
-    depart = sediment.query(city="海口", product="666", date_str="2026-10-03", direction="depart")
-    arrive = sediment.query(city="海口", product="666", date_str="2026-10-03", direction="arrive")
-    both = sediment.query(city="海口", product="666", date_str="2026-10-03", direction="both")
+    # 海口出发 vs 到达 应互斥（用屏蔽区间外的周六，避免档位×日期屏蔽导致全空）
+    depart = sediment.query(city="海口", product="666", date_str="2026-10-10", direction="depart")
+    arrive = sediment.query(city="海口", product="666", date_str="2026-10-10", direction="arrive")
+    both = sediment.query(city="海口", product="666", date_str="2026-10-10", direction="both")
     assert len(depart) + len(arrive) == len(both)
     for r in depart:
         assert r["origin"]["city"] == "海口"

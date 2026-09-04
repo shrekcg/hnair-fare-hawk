@@ -31,6 +31,8 @@ from app import (  # noqa: E402
     LOG_PATH,
     add_task,
     add_tasks_batch,
+    clear_notify_history,
+    clear_price_history,
     clear_run_log,
     code_to_city_label,
     delete_task,
@@ -47,12 +49,14 @@ from app import (  # noqa: E402
     save_notify_channels,
     save_price_query,
     save_proxy,
+    save_polling,
     save_send_keys,
     set_status,
     set_task_enabled,
     set_tasks_enabled,
+    update_tasks,
 )
-from backend.notifier import send_test_alert, test_feishu  # noqa: E402
+from backend.notifier import fake_price_hit_payload, send_test_alert, test_feishu  # noqa: E402
 from backend.fetcher import TokenExpiredError, fetch_price_status  # noqa: E402
 import backend.sediment as sediment  # noqa: E402
 import backend.observations as observations  # noqa: E402
@@ -226,13 +230,17 @@ def _sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
             "enabled": bool(config.get("price_query", {}).get("enabled", True)),
             "min_interval": int(config.get("price_query", {}).get("min_interval", 8) or 8),
         },
-        # 飞书渠道：AppID 掩码展示（前4后4），AppSecret 永不回传，receiver 不敏感可展示
+        # 飞书渠道：AppID 完整回传（仅 hover 展示用，非机密；AppSecret 永不回传，receiver 不敏感可展示）
         "feishu": {
             "configured": bool(feishu_app_id and str(feishu.get("app_secret", "") or "").strip()),  # noqa: E501
-            "app_id": _mask_key(feishu_app_id),
+            "app_id": feishu_app_id,
             "has_secret": bool(str(feishu.get("app_secret", "") or "").strip()),
             "receiver": feishu_receiver,
+            "enabled": bool(feishu.get("enabled", True)),
+            "urgent_enabled": bool(feishu.get("urgent_enabled", True)),
         },
+        # 微信公众号（Server酱「方糖」）：开关状态
+        "wechat": {"enabled": bool((config.get("wechat") or {}).get("enabled", True))},
         # 多通道通知（企业微信/钉钉/Bark/ntfy + 全局加急开关 + 飞书长连接状态）
         "notify_channels": _notify_channels_view(config),
     }
@@ -272,6 +280,14 @@ def _build_state() -> Dict[str, Any]:
                 "fare_type": r.get("fare_type", "normal"),
                 "flight": r.get("flight", ""),
                 "price": r.get("price", ""),
+                # 来源任务 id（前端据此在任务列表里匹配余票/舱位监控条件）
+                "task_id": r.get("task_id", ""),
+                # 档位（会员专享产品列表；普通可购价为空数组）
+                "tiers": r.get("tiers") or [],
+                # 起降时刻与余票（旧记录可能缺失，前端需防空）
+                "dep_time": r.get("dep_time", ""),
+                "arr_time": r.get("arr_time", ""),
+                "seats": r.get("seats"),
             }
             for r in history
         ],
@@ -375,6 +391,15 @@ def _build_task_rows(tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "stop": stop,
             "target_price": 199,
             "fare_type": "plus",
+            # 档位条件（多选白名单）：组内并集；旧任务只有单值 tier 时并入
+            "tiers": sorted({
+                str(x).strip() for t in group
+                for x in (t.get("tiers") if isinstance(t.get("tiers"), (list, tuple)) else ())
+                if str(x).strip() in ("666", "2666", "66666")
+            }.union({
+                str(t.get("tier", "")).strip() for t in group
+                if str(t.get("tier", "") or "").strip() in ("666", "2666", "66666")
+            }), key=lambda x: int(x)),
             # 余票/舱位监控条件：取组内最严（min_seats 最大），舱位白名单取并集
             "min_seats": max(int(t.get("min_seats", 1) or 1) for t in group),
             "cabins": sorted({str(c).strip().upper() for t in group for c in (t.get("cabins") or []) if str(c).strip()}),
@@ -671,6 +696,8 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 delete_tasks(ids)
                 _send_json(self, 200, {"ok": True})
+            elif path == "/api/tasks/update":
+                self._post_tasks_update(data)
             elif path == "/api/send_keys":
                 raw = str(data.get("raw", ""))
                 keys = [k.strip() for k in raw.splitlines() if k.strip()]
@@ -710,6 +737,15 @@ class Handler(BaseHTTPRequestHandler):
                 min_interval = int(data.get("min_interval") or 8)
                 save_price_query(enabled, min_interval)
                 _send_json(self, 200, {"ok": True, "enabled": enabled, "min_interval": min_interval})
+            elif path == "/api/polling":
+                save_polling(
+                    day_min_sec=data.get("day_min_sec"),
+                    day_max_sec=data.get("day_max_sec"),
+                    night_min_sec=data.get("night_min_sec"),
+                    night_max_sec=data.get("night_max_sec"),
+                )
+                poll = load_config().get("polling", {})
+                _send_json(self, 200, {"ok": True, "polling": poll})
             elif path == "/api/feishu":
                 self._post_feishu(data)
             elif path == "/api/notify/save":
@@ -723,6 +759,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/log/clear":
                 archived = clear_run_log()
                 _send_json(self, 200, {"ok": True, "archived_bytes": archived, "message": "运行日志已清除，旧日志已归档为 run_log.txt.bak（本地保留）。"})
+            elif path == "/api/notify_history/clear":
+                archived = clear_notify_history()
+                _send_json(self, 200, {"ok": True, "archived_bytes": archived, "message": "通知历史已清除，旧记录已归档为 notification_history.jsonl.bak（本地保留）。"})
+            elif path == "/api/price_history/clear":
+                archived = clear_price_history()
+                _send_json(self, 200, {"ok": True, "archived_bytes": archived, "message": "最近低价命中记录已清除，旧记录已归档为 price_history.jsonl.bak（本地保留）。"})
             elif path == "/api/feishu/test":
                 config = load_config()
                 feishu = config.get("feishu") or {}
@@ -732,9 +774,20 @@ class Handler(BaseHTTPRequestHandler):
                 if not (app_id and app_secret and receiver):
                     _send_json(self, 400, {"ok": False, "error": "飞书配置不完整，请先填写 App ID / App Secret / 接收人。"})
                     return
-                ok, err = test_feishu(app_id, app_secret, receiver)
+                # 默认发交互确认卡片（带回执，可确认/忽略），内容模拟真实低价命中提醒
+                test_title, test_content = fake_price_hit_payload()
+                test_card = build_confirm_card(
+                    test_title, test_content, callback_key="test_alert",
+                    action_value=str(int(time.time() * 1000)),
+                )
+                # 跟随「当前已配置的加急形态」：默认加急开 → 加急卡片；关 → 普通卡片
+                urgent = bool((config.get("feishu") or {}).get("urgent_enabled", True))
+                ok, err, message_id = test_feishu(app_id, app_secret, receiver, card=test_card, urgent=urgent)
+                if ok and message_id:
+                    # 登记测试卡片原文：用户点「确认已处理/忽略」时回调能更新卡片并记录回执
+                    feishu_ws.record_sent_card(message_id, test_card)
                 if ok:
-                    _send_json(self, 200, {"ok": True, "success": True, "message": "测试消息已发送，请到飞书查看。"})
+                    _send_json(self, 200, {"ok": True, "success": True, "message": "测试卡片已发送，请到飞书点击按钮验证确认回执。"})
                 else:
                     _send_json(self, 200, {"ok": True, "success": False, "error": err})
             elif path == "/api/ticket":
@@ -850,6 +903,9 @@ class Handler(BaseHTTPRequestHandler):
                 "to_code": to_code,
                 "dates": dates,
                 "product": str(it.get("product", "") or "").strip(),
+                "tier": str(it.get("tier", "") or "").strip(),
+                # 档位条件多选白名单（空=不限）；旧客户端只发单值 tier，由 app 层兼容
+                "tiers": [str(x).strip() for x in (it.get("tiers") or []) if str(x).strip()],
                 "flight_no": str(it.get("flight_no", "") or "").strip(),
                 "dep_time": str(it.get("dep_time", "") or "").strip(),
                 "arr_time": str(it.get("arr_time", "") or "").strip(),
@@ -876,6 +932,33 @@ class Handler(BaseHTTPRequestHandler):
             parts.append(f"并入已有任务 {result['merged']} 个（同航班号且起降时刻相同的日期已并入）")
         _send_json(self, 200, {"ok": True, **result, "message": "；".join(parts)})
 
+    def _post_tasks_update(self, data: Dict[str, Any]) -> None:
+        """更新监控任务（编辑弹窗）：按 id/ids 一次性更新组内全部任务。"""
+        ids = _task_ids(data)
+        if not ids:
+            _send_json(self, 400, {"ok": False, "error": "缺少任务 id。"})
+            return
+        from_code = str(data.get("from_code", "") or "").strip()
+        to_code = str(data.get("to_code", "") or "").strip()
+        if from_code:
+            code, tips = resolve_code(from_code)
+            if not code:
+                _send_json(self, 400, {"ok": False, "error": "出发地无法唯一匹配，请换个写法或直接输入三字码。", "tips": tips[:8]})
+                return
+            data["from_code"] = code
+        if to_code:
+            code, tips = resolve_code(to_code)
+            if not code:
+                _send_json(self, 400, {"ok": False, "error": "到达地无法唯一匹配，请换个写法或直接输入三字码。", "tips": tips[:8]})
+                return
+            data["to_code"] = code
+        dates = data.get("dates")
+        if isinstance(dates, list) and not dates:
+            _send_json(self, 400, {"ok": False, "error": "至少保留一个监控日期。"})
+            return
+        touched = update_tasks(ids, data)
+        _send_json(self, 200, {"ok": True, "touched": touched, "message": f"已更新 {touched} 个监控任务"})
+
     def _post_feishu(self, data: Dict[str, Any]) -> None:
         """保存飞书通知渠道配置。app_secret 为空串表示不修改（永不回传）。"""
         app_id = str(data.get("app_id", "")).strip()
@@ -892,7 +975,10 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def _post_notify_test(self, data: Dict[str, Any]) -> None:
-        """发送指定渠道的测试消息（飞书用可点按确认的交互卡片，callback_key=test_alert）。"""
+        """发送指定渠道的测试消息：模拟一条真实低价命中提醒（假数据已注明，跟随当前加急形态）。
+
+        飞书用可点按确认的交互卡片（callback_key=test_alert）；其他渠道按各自形态。
+        """
         channel = str(data.get("channel", "")).strip()
         if channel not in CHANNEL_LABELS:
             _send_json(self, 400, {"ok": False, "error": f"未知渠道：{channel or '(空)'}，可选 {', '.join(CHANNEL_LABELS)}"})
@@ -902,12 +988,7 @@ class Handler(BaseHTTPRequestHandler):
         notify_cfg = dict(config.get("notify_channels") or {})
         notify_cfg.setdefault("urgent_enabled", True)
         notify_cfg["feishu"] = config.get("feishu") or {}
-        title = "海航监控 · 测试消息"
-        content = (
-            f"渠道：{CHANNEL_LABELS[channel]}\n"
-            f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            "收到此消息表示通知通道配置正确。"
-        )
+        title, content = fake_price_hit_payload()
         card = None
         if channel == "feishu":
             card = build_confirm_card(title, content, callback_key="test_alert", action_value=str(int(time.time() * 1000)))

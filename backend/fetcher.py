@@ -678,6 +678,35 @@ def _extract_itinerary_price(itinerary: Dict[str, Any]) -> int | None:
     return None
 
 
+# 「2666海航PLUS会员专享」等会员专享产品命名：数字即档位（666/2666/66666…）
+_PLUS_TIER_RE = re.compile(r"(\d{3,6})\s*海航\s*PLUS\s*会员专享", re.IGNORECASE)
+
+
+def _extract_tiers(itinerary: Dict[str, Any]) -> List[int]:
+    """从 airItineraryPrices 解析该航班含哪些「PLUS 会员专享」产品档位。
+
+    档位来源：fareFamilyName 命名中的数字（如「2666海航PLUS会员专享」→ 2666）。
+    带 purchaseUserTags（会员身份门槛）但命名识别不到数字时，保守归入最低档 666，
+    避免把带门槛价误判成普通可购价（漏报方向）。
+    返回升序档位列表；无会员专享产品返回 []。
+    """
+    options = itinerary.get("airItineraryPrices")
+    if not isinstance(options, list):
+        return []
+    tiers: set[int] = set()
+    for opt in options:
+        if not isinstance(opt, dict):
+            continue
+        name = str(opt.get("fareFamilyName") or "").strip()
+        m = _PLUS_TIER_RE.search(name)
+        if m:
+            tiers.add(int(m.group(1)))
+            continue
+        if opt.get("purchaseUserTags"):
+            tiers.add(666)
+    return sorted(tiers)
+
+
 def _extract_seat_info(itinerary: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """从航班响应提取余票与舱位信息（PLUS 专享档）。
 
@@ -1125,6 +1154,11 @@ def _request_price(profile: Dict[str, Any]) -> "tuple[str, List[Dict[str, Any]]]
         if seat_info is not None:
             result["seats"] = seat_info.get("seats", 0)
             result["cabins"] = seat_info.get("cabins", [])
+
+        # 会员专享产品档位（666/2666/66666…）：daemon 按任务的档位条件过滤命中
+        tiers = _extract_tiers(itinerary)
+        if tiers:
+            result["tiers"] = tiers
 
         # 实时起降时刻与航站楼（供前端覆盖底表静态 CSV 时刻，如 Y87531 CSV 误抓 08:50）
         if isinstance(segments, list) and segments:

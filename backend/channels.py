@@ -288,12 +288,15 @@ def send_feishu(
 
     message_id = str((data.get("data") or {}).get("message_id", "") or "")
     # 应用内加急（免费无额度）：只对本应用自己发送的消息有效
+    # 注意：user_id_list 必须在请求体（body）里传 JSON 数组；放 query 会报
+    # code=230001 "all ids in the user_id_list are invalid"。
     if urgent and message_id:
         try:
             resp = requests.patch(
                 f"https://open.feishu.cn/open-apis/im/v1/messages/{message_id}/urgent_app"
-                f"?user_id_type=open_id&user_id_list={urllib.parse.quote(receiver)}",
-                headers={"Authorization": f"Bearer {token}"},
+                "?user_id_type=open_id",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"user_id_list": [receiver]},
                 timeout=10,
             )
             udata = resp.json()
@@ -318,7 +321,9 @@ def build_confirm_card(
     """
     content_short = content if len(content) <= 600 else content[:597] + "..."
     return {
-        "config": {"wide_screen_mode": True},
+        # update_multi 必须为 true：更新已发送卡片接口要求更新前后卡片都显式声明为共享卡片，
+        # 否则 PATCH 返回 code=0 但用户端内容不更新（按钮不消失）。
+        "config": {"wide_screen_mode": True, "update_multi": True},
         "header": {"template": "red" if "🚨" in title else "blue", "title": {"tag": "plain_text", "content": title}},
         "elements": [
             {"tag": "markdown", "content": content_short},
@@ -358,14 +363,23 @@ def build_confirm_resolved_card(origin_card: Dict[str, Any], confirmed: bool) ->
 
 
 def update_feishu_card(app_id: str, app_secret: str, message_id: str, card: Dict[str, Any]) -> tuple[bool, str]:
-    """用新内容更新已发送的交互卡片（回调反馈闭环）。"""
+    """用新内容更新已发送的交互卡片（回调反馈闭环）。
+
+    官方「更新已发送的消息卡片」接口要求：更新前后卡片的 config 均需显式
+    声明 update_multi=true（共享卡片），否则 PATCH 返回 code=0 但内容不生效。
+    """
     token = _feishu_token(app_id, app_secret)
     if not token:
         return False, "获取 tenant_access_token 失败"
+    # 防御：即使登记的原卡片来自旧版本（config 缺 update_multi），更新侧也强制声明
+    card_cfg = dict(card.get("config") or {})
+    card_cfg["update_multi"] = True
+    card = dict(card)
+    card["config"] = card_cfg
     try:
         resp = requests.patch(
             f"https://open.feishu.cn/open-apis/im/v1/messages/{message_id}",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=utf-8"},
             json={"content": json.dumps(card, ensure_ascii=False)},
             timeout=10,
         )
@@ -391,17 +405,23 @@ CHANNEL_LABELS = {
 def _channel_enabled(cfg: Dict[str, Any], name: str) -> bool:
     ch = cfg.get(name) or {}
     if name == "feishu":
-        # 飞书渠道既有配置在 config.feishu，是否启用看旧配置是否完整
+        # 飞书渠道既有配置在 config.feishu，启用 = 配置完整 && 渠道开关开启（默认开）
         feishu_cfg = cfg.get("feishu") or {}
-        return bool(str(feishu_cfg.get("app_id", "") or "").strip() and str(feishu_cfg.get("app_secret", "") or "").strip())
+        configured = bool(str(feishu_cfg.get("app_id", "") or "").strip() and str(feishu_cfg.get("app_secret", "") or "").strip())
+        return configured and bool(feishu_cfg.get("enabled", True))
     return bool(ch.get("enabled", False))
 
 
 def _urgent_enabled(cfg: Dict[str, Any], name: str, level: str) -> bool:
-    """该渠道本次是否加急：全局开关 + level 达到重要级别。"""
+    """该渠道本次是否加急：全局开关 + 渠道开关（飞书独立加急开关）+ level 达到重要级别。"""
     global_urgent = bool(cfg.get("urgent_enabled", True))
     if not global_urgent:
         return False
+    if name == "feishu":
+        # 飞书卡片/消息加急开关：默认开；关闭后该渠道不发加急（仍正常推送）
+        feishu_cfg = cfg.get("feishu") or {}
+        if not bool(feishu_cfg.get("urgent_enabled", True)):
+            return False
     if level in ("important", "critical"):
         return True
     return False

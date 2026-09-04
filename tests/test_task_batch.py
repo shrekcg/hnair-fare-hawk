@@ -173,6 +173,151 @@ def test_expand_task_dates_new_and_old_model(app_env):
     assert app_mod.expand_task_dates({"dates": ["bad", "2026-09-20"]}) == ["2026-09-20"]
 
 
+def test_add_tasks_batch_tier(app_env):
+    """档位条件透传：合法值保存，非法/缺失按不限(all)；合并时取更宽。"""
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tier": "2666",
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tier"] == "2666"
+    assert t["tiers"] == ["2666"]
+
+    # 非法值归一为 all，合并取更宽 -> all 覆盖 2666（避免漏报）
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-21"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tier": "abc",
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tier"] == "all"
+    assert t["tiers"] == []
+
+    # 更宽的档位覆盖窄档位（2666 -> all 取 all）
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-21"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tier": "all",
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tier"] == "all"
+    assert t["tiers"] == []
+
+    # 更窄的档位不覆盖（all -> 666 保持 all，避免漏报）
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-22"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tier": "666",
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tier"] == "all"
+    assert t["tiers"] == []
+
+
+def test_add_tasks_batch_tiers_multi(app_env):
+    """新弹窗多选白名单（tiers 数组）：创建、并集合并、不限吸收。"""
+    # 创建：tiers 列表保存，排序稳定
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tiers": ["2666", "666"],
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tiers"] == ["666", "2666"]
+    assert t["tier"] == "666"  # 兼容旧单值读取
+
+    # 并集：666 任务 + 新增 2666 -> {666, 2666}
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-21"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tiers": ["2666"],
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tiers"] == ["666", "2666"]
+
+    # 不限吸收：新增空（不限）并入已有白名单 -> 保持不限
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-22"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tiers": [],
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tiers"] == []
+    assert t["tier"] == "all"
+
+    # 已有任务不限时，新增白名单不缩窄（防漏报）
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-23"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tiers": ["666"],
+    }])
+    t = _read_tasks(app_env)[0]
+    assert t["tiers"] == []
+
+
+def test_update_tasks_fields(app_env):
+    """编辑任务：可改航线/日期/航班/档位/余票舱位；保留 id/enabled/fare_type。"""
+    app_mod.add_tasks_batch([{
+        "from_code": "SZX", "to_code": "HGH", "dates": ["2026-09-20", "2026-09-21"],
+        "product": "666", "flight_no": "HU1", "dep_time": "08:00", "arr_time": "10:00",
+        "tiers": ["666"],
+    }])
+    t = _read_tasks(app_env)[0]
+    orig_id = t["id"]
+    touched = app_mod.update_tasks([orig_id], {
+        "from_code": "CAN", "to_code": "SHA", "dates": ["2026-09-25"],
+        "flight_no": "HU999", "dep_time": "12:00", "arr_time": "14:30",
+        "tiers": ["666", "2666"], "min_seats": 2, "cabins": ["B", "C"],
+    })
+    assert touched == 1
+    t2 = _read_tasks(app_env)[0]
+    assert t2["id"] == orig_id
+    assert t2["from_code"] == "CAN"
+    assert t2["to_code"] == "SHA"
+    assert t2["dates"] == ["2026-09-25"]
+    assert t2["date"] == "2026-09-25"
+    assert t2["date_end"] == "2026-09-25"
+    assert t2["flight_no"] == "HU999"
+    assert t2["dep_time"] == "12:00"
+    assert t2["arr_time"] == "14:30"
+    assert t2["tiers"] == ["666", "2666"]
+    assert t2["min_seats"] == 2
+    assert t2["cabins"] == ["B", "C"]
+    assert t2["enabled"] is True
+    assert t2["fare_type"] == "plus"
+    assert t2["target_price"] == 199
+    # 档位清空=不限
+    app_mod.update_tasks([orig_id], {"tiers": []})
+    t3 = _read_tasks(app_env)[0]
+    assert t3["tiers"] == []
+    assert t3["tier"] == "all"
+    # 未知 id 不影响
+    assert app_mod.update_tasks(["nope"], {"tiers": ["666"]}) == 0
+
+
+def test_daemon_task_tier_ok_multi(app_env):
+    """daemon 档位过滤：新多选白名单（精确匹配）+ 旧单值兼容。"""
+    from daemon import _task_tier_ok
+    # 空=不限
+    assert _task_tier_ok({"tiers": []}, {"tiers": [666]}) is True
+    assert _task_tier_ok({"tiers": []}, {}) is True
+    # 白名单精确匹配
+    assert _task_tier_ok({"tiers": ["666"]}, {"tiers": [666]}) is True
+    assert _task_tier_ok({"tiers": ["2666"]}, {"tiers": [666]}) is False
+    assert _task_tier_ok({"tiers": ["2666"]}, {"tiers": [2666]}) is True
+    assert _task_tier_ok({"tiers": ["666", "2666"]}, {"tiers": [2666]}) is True
+    assert _task_tier_ok({"tiers": ["2666"]}, {"tiers": [666, 2666]}) is True
+    # 命中项无会员档（普通价），选了具体档位不提醒
+    assert _task_tier_ok({"tiers": ["666"]}, {}) is False
+    # 旧单值兼容：2666 提醒 666+2666；666 不提醒 2666
+    assert _task_tier_ok({"tier": "2666"}, {"tiers": [666]}) is True
+    assert _task_tier_ok({"tier": "2666"}, {"tiers": [2666]}) is True
+    assert _task_tier_ok({"tier": "666"}, {"tiers": [2666]}) is False
+    assert _task_tier_ok({"tier": "all"}, {"tiers": [666]}) is True
+    assert _task_tier_ok({}, {}) is True
+
+
 def test_daemon_expand_dates_dates_field():
     """daemon.expand_dates 优先使用 dates 列表字段，空时回退旧模型。"""
     assert expand_dates({"dates": ["2026-09-21", "2026-09-20", "2026-09-21"]}) == ["2026-09-20", "2026-09-21"]

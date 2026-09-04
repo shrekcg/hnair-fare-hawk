@@ -2,7 +2,7 @@
 // 统一 size=14 / strokeWidth=2 的线性风格，替换原 @ant-design/icons 使用点。
 import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Compass, FileText, HelpCircle, LayoutDashboard,
-  MessageCircle, Pencil, Plus, Power, Rocket, Send, Settings, ShieldCheck, Trash2,
+  MessageCircle, Pencil, Plus, Power, Rocket, Send, Settings, ShieldCheck, Trash2, X,
 } from 'lucide-react'
 
 const wrap = (C) => (props) => <C size={typeof props.size === 'number' ? props.size : 14} strokeWidth={2} {...props} />
@@ -25,3 +25,4 @@ export const SettingsIcon = wrap(Settings)
 export const MonitorIcon = wrap(ShieldCheck)          // 监控管理
 export const DeleteIcon = wrap(Trash2)
 export const QuestionIcon = wrap(HelpCircle)          // 教学提示（卡片标题旁 ?）
+export const CloseIcon = wrap(X)                      // 关闭（测试结果条）

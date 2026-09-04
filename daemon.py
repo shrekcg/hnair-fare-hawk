@@ -17,6 +17,7 @@ from backend.fetcher import TokenExpiredError, fetch_price_status
 from backend.notifier import (
     send_price_alert,
     send_token_expired_alert,
+    tier_text,
 )
 from backend.scheduler import get_next_interval_seconds
 from backend.state import AlertStateManager
@@ -317,6 +318,41 @@ def _seat_summary(item: Dict[str, Any]) -> str:
     return f"余票 {seats} 张（{' · '.join(parts)}）"
 
 
+def _task_tier_ok(task: Dict[str, Any], item: Dict[str, Any]) -> bool:
+    """按任务的档位条件过滤命中（PLUS 专享价监控）。
+
+    语义（与「转监控任务 / 编辑任务」弹窗的档位多选一致，多选=白名单）：
+    - task.tiers 为空列表或未设置：不限档位，普通可购价与会员专享价都提醒；
+    - task.tiers 非空（白名单）：仅命中档位在白名单内的会员专享价才提醒（精确匹配，
+      不再“更高档更不限”）；命中项无会员档（普通可购价）时不提醒，避免提醒买不到的价。
+    - 旧任务只有单值 task.tier（兼容，保持旧语义）：tier=666 只提醒 666；
+      tier=2666 提醒 666/2666；tier=66666 提醒 666/2666/66666（更高级会员可见更低档专享产品）。
+    """
+    tiers_cfg = task.get("tiers")
+    if isinstance(tiers_cfg, (list, tuple)):
+        sel = {int(t) for t in tiers_cfg if str(t).strip() in ("666", "2666", "66666")}
+        if not sel:
+            return True  # 空=不限
+        item_tiers = item.get("tiers") or []
+        if not item_tiers:
+            return False  # 无会员专享产品（普通可购价）：选了具体档位时不提醒
+        return any(int(t) in sel for t in item_tiers if str(t).strip().isdigit())
+
+    # 旧单值兼容
+    tier = str(task.get("tier", "") or "").strip()
+    if not tier or tier == "all":
+        return True
+    try:
+        limit = int(tier)
+    except (TypeError, ValueError):
+        return True  # 无法识别的档位值按不限处理，避免漏报
+    tiers = item.get("tiers") or []
+    if not tiers:
+        # 无会员专享产品（普通可购价）：选了具体档位时不提醒，避免买到不上的价格
+        return False
+    return any(int(t) <= limit for t in tiers)
+
+
 def _parse_hhmm(value: str, fallback: str) -> dt_time:
     """解析 HH:MM，异常时回退 fallback。"""
     for candidate in (str(value or "").strip(), fallback):
@@ -352,6 +388,7 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
     """
     config = load_config()
     send_keys = config.get("send_keys", [])
+    wechat_enabled = bool((config.get("wechat") or {}).get("enabled", True))
     feishu_cfg = config.get("feishu") or {}
     # 多通道通知配置：notify_channels 下各渠道 + 旧 config.feishu（飞书渠道沿用旧配置）
     notify_cfg = dict(config.get("notify_channels") or {})
@@ -443,7 +480,10 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
                 append_log(f"[鉴权失败] {reason}（该任务进入退避）")
 
                 if state_mgr.should_send_token_alert():
-                    send_token_expired_alert(send_keys, reason)
+                    if wechat_enabled:
+                        send_token_expired_alert(send_keys, reason)
+                    else:
+                        append_log("微信公众号通知已停用，跳过 Server酱 Token 告警。")
                     # 多通道 critical：强制尝试全部渠道（未配置的渠道也记录失败）
                     notify_channels(
                         cfg=notify_cfg,
@@ -501,6 +541,11 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
                     "fare_type": fare_type,
                     "flight": flight,
                     "price": price,
+                    # 档位（会员专享产品 666/2666/66666…；普通可购价无 tiers 字段）
+                    "tiers": item.get("tiers") or [],
+                    # 起降时刻：优先实时接口带出的 times，其次任务快照（旧记录可能都没有）
+                    "dep_time": (item.get("times") or {}).get("dep") or str(task.get("dep_time", "") or "").strip(),
+                    "arr_time": (item.get("times") or {}).get("arr") or str(task.get("arr_time", "") or "").strip(),
                 }
                 if item.get("seats") is not None:
                     history_record["seats"] = item.get("seats")
@@ -510,15 +555,18 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
                     history_seen.add(history_key)
                     append_history(history_record)
 
-                if price <= target_price and _task_seat_ok(task, item):
+                if price <= target_price and _task_seat_ok(task, item) and _task_tier_ok(task, item):
                     # 提醒用“命中当天”的任务视图：正文显示具体日期，指纹含日期可避免区间内重复推送。
                     alert_task = dict(task)
                     alert_task["date"] = date
                     alert_task["date_end"] = str(task.get("date_end", "") or "")
                     fingerprint = _build_fingerprint(alert_task, flight, price)
                     if state_mgr.should_alert(fingerprint):
-                        # 保留 Server酱（向后兼容）
-                        send_price_alert(send_keys, alert_task, flight, price)
+                        # 保留 Server酱（向后兼容；公众号开关关闭时跳过）
+                        if wechat_enabled:
+                            send_price_alert(send_keys, alert_task, flight, price, tiers=item.get("tiers"))
+                        else:
+                            append_log("微信公众号通知已停用，跳过 Server酱低价提醒。")
                         # 多通道通知：飞书交互卡片（确认/忽略回调）+ 企微/钉钉/Bark/ntfy
                         cabin_extra = ""
                         cabin_raw = task.get("cabins")
@@ -536,6 +584,7 @@ def run_one_round(state_mgr: AlertStateManager) -> bool:
                             f"日期：{date}\n"
                             f"航线：{from_city}({from_code}) → {to_city}({to_code})\n"
                             f"类型：{fare_label}（目标 ≤ {target_price} 元，已达标 ✅）\n"
+                            f"档位：{tier_text(item.get('tiers'))}\n"
                             f"价格：{price} 元\n"
                             f"余票：{seat_text}{cabin_extra}"
                         )

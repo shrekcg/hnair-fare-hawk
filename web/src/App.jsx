@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Alert, App as AntApp, Button, Card, Col, Collapse, ConfigProvider, DatePicker, Descriptions, Dropdown, Empty, Form, Input,
-  InputNumber, Layout, Menu, Modal, Popconfirm, Popover, Radio, Result, Row, Segmented, Select, Space, Spin,
+  InputNumber, Layout, Menu, Modal, Popconfirm, Popover, Radio, Result, Row, Select, Space, Spin,
   Statistic, Steps, Switch, Table, Tag, TimePicker, Tooltip, Typography,
 } from 'antd'
 import {
-  CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CompassIcon, DeleteIcon, EditIcon, HistoryIcon, MonitorIcon,
+  CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, CompassIcon, DeleteIcon, EditIcon, HistoryIcon, MonitorIcon,
   NotifyIcon, OverviewIcon, PlusIcon, PowerIcon, QuestionIcon, SendIcon, SettingsIcon, TasksIcon, BrandIcon,
 } from './icons.jsx'
 import dayjs from 'dayjs'
@@ -22,13 +22,130 @@ const TABS = [
   { key: 'history', icon: <HistoryIcon />, label: '历史日志' },
 ]
 
+/* 舱位白名单常见值（可手输任意舱位码，回车添加）；转监控弹窗与编辑任务弹窗共用 */
+const CABIN_OPTIONS = ['B', 'C', 'Y', 'Z', 'R', 'H', 'K', 'L', 'M', 'N', 'Q', 'T', 'X', 'E', 'U', 'V', 'W', 'G', 'S']
+const TIER_OPTIONS = [
+  { value: '666', label: '666' },
+  { value: '2666', label: '2666' },
+  { value: '66666', label: '66666' },
+]
+
 /* ---------- 通用辅助 ---------- */
 function shortCity(label) {
   return String(label || '').split('（')[0] || label
 }
 
-function fareTag(fareType) {
-  return fareType === 'plus' ? <Tag color="blue">PLUS专享</Tag> : <Tag>普通票价</Tag>
+// 展开底表 effective_dates 区间到逐日（去重排序）；FlightQuery 与监控任务编辑弹窗共用
+function expandDates(ranges) {
+  const seen = new Set()
+  for (const [a, b] of ranges || []) {
+    let cur = dayjs(a)
+    const end = dayjs(b)
+    let guard = 0
+    while (!cur.isAfter(end) && guard < 400) {
+      seen.add(cur.format('YYYY-MM-DD'))
+      cur = cur.add(1, 'day')
+      guard += 1
+    }
+  }
+  return [...seen].sort()
+}
+
+// 合并重叠的可飞日期区间（数据源同航班多条记录会带来近似重复区间，展示前并集化简）
+function mergeRanges(ranges = []) {
+  const arr = (ranges || [])
+    .filter((r) => Array.isArray(r) && r.length >= 2)
+    .map((r) => [String(r[0]).slice(0, 10), String(r[1]).slice(0, 10)])
+    .sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0))
+  const out = []
+  for (const [a, b] of arr) {
+    const last = out[out.length - 1]
+    if (last && a <= last[1]) {
+      if (b > last[1]) last[1] = b
+    } else {
+      out.push([a, b])
+    }
+  }
+  return out
+}
+
+// 档位×日期固定规则（产品条款，事实源：data/sediment/tier_block_rules.json，
+// 经 /api/flights/meta.tier_block_rules 下发；此处为后端未就绪时的兜底，须与底表 JSON 保持一致）：
+// 规则来源：搜狗公众号「666元海航随心飞,有效期1年!」(2026-08) × 参考资料 sxfroute 交叉验证。
+// 666 元版屏蔽春运/五一/暑运/十一；2666 元版仅屏蔽春运/暑运；66666 无官方条款默认不限。
+// 区间均为闭区间（含首尾）。格式：档位 → 不可选日期区间列表；空数组=该档不限。
+const DEFAULT_TIER_BLOCK_RULES = {
+  '666': [
+    ['2026-02-02', '2026-03-13'], // 2026 春运（农历腊月十五~正月廿五，近似）
+    ['2026-04-30', '2026-05-06'], // 2026 五一（法定假期及前后各一天）
+    ['2026-07-01', '2026-08-31'], // 暑运
+    ['2026-09-30', '2026-10-09'], // 2026 十一（国庆法定假期及前后各一天）
+  ],
+  '2666': [
+    ['2026-02-02', '2026-03-13'], // 春运
+    ['2026-07-01', '2026-08-31'], // 暑运
+  ],
+  '66666': [],
+}
+
+// 后端 /api/flights/meta.tier_block_rules 形状：{source, notes, tiers: {档位: {label, blocks: [[start,end]]}}}
+// 归一为 {档位: [[start,end], ...]} 供 filterTierDates 使用
+function normalizeTierRules(metaRules) {
+  const out = {}
+  for (const [t, v] of Object.entries((metaRules && metaRules.tiers) || {})) {
+    out[t] = Array.isArray(v && v.blocks) ? v.blocks : []
+  }
+  return out
+}
+
+// 档位×日期过滤：返回 dates 中该档位允许选择的日期（按规则剔除屏蔽区间内日期）。
+// 无档位信息或档位没有规则时原样返回，不做拦截。
+function filterTierDates(dates, product, tierBlockRules) {
+  if (!dates || !dates.length) return dates
+  const rules = tierBlockRules || DEFAULT_TIER_BLOCK_RULES
+  const tiers = String(product || '').split('/').map((s) => s.trim()).filter(Boolean)
+  const blocks = tiers.flatMap((t) => rules[t] || [])
+  if (!blocks.length) return dates
+  const blocked = new Set()
+  for (const [a, b] of blocks) {
+    let cur = dayjs(a)
+    const end = dayjs(b)
+    let guard = 0
+    while (!cur.isAfter(end) && guard < 400) {
+      blocked.add(cur.format('YYYY-MM-DD'))
+      cur = cur.add(1, 'day')
+      guard += 1
+    }
+  }
+  return dates.filter((d) => !blocked.has(String(d).slice(0, 10)))
+}
+
+// 展开多条底表记录的可飞日期：区间内且班期匹配（day() 周日=0…周六=6 换算为 周一=1…周日=7），
+// 任一记录当天可飞即算（并集），去重排序；无班期数据的记录退化为按区间展开。
+// 与班期日历 ScheduleCalendar 的判定一致，保证转监控/编辑弹窗只能选日历里可兑换的天。
+function expandRecordDates(records = []) {
+  const seen = new Set()
+  for (const rec of records || []) {
+    const ranges = Array.isArray(rec.effective_dates) ? rec.effective_dates : []
+    const days = Array.isArray(rec.days) ? rec.days : []
+    if (!days.length) {
+      for (const d of expandDates(ranges)) seen.add(d)
+      continue
+    }
+    for (const [a, b] of ranges) {
+      if (!a || !b) continue
+      let cur = dayjs(a)
+      const end = dayjs(b)
+      let guard = 0
+      while (!cur.isAfter(end) && guard < 500) {
+        const iso = cur.day() === 0 ? 7 : cur.day()
+        if (days.includes(iso)) seen.add(cur.format('YYYY-MM-DD'))
+        cur = cur.add(1, 'day')
+        guard += 1
+      }
+    }
+  }
+  return [...seen].sort()
 }
 
 function HitTag({ hit }) {
@@ -36,18 +153,67 @@ function HitTag({ hit }) {
 }
 
 /* ================= 总览 ================= */
-function Overview({ data, onGo, onToggleStatus }) {
+function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
   const cfg = data.config
   const stats = data.stats
   const running = cfg.status === 'running'
-  const hits = (data.history || []).filter((r) => Number(r.price) <= 500).slice(0, 10)
+  const hits = (data.history || []).filter((r) => Number(r.price) <= 500).slice(0, 50)
+
+  const taskOf = (r) => (data.tasks || []).find((t) => Array.isArray(t.ids) && t.ids.includes(r.task_id))
 
   const columns = [
     { title: '时间', dataIndex: 'ts', width: 160, render: (v) => formatTs(v) },
-    { title: '航线', key: 'route', render: (_, r) => `${shortCity(r.from)} → ${shortCity(r.to)}` },
+    {
+      title: '航线', key: 'route', width: 320,
+      render: (_, r) => (
+        <Space direction="vertical" size={3} style={{ padding: '4px 0' }}>
+          {/* 标题行：航班号 + 城市（省份） → 城市（省份） */}
+          <Space size={6} wrap>
+            <span className="mono" style={{ fontWeight: 600 }}>{r.flight || '—'}</span>
+            <span>
+              {cityWithProvince(shortCity(r.from))}
+              <ChevronRightIcon size={11} style={{ color: '#bfbfbf', margin: '0 6px' }} />
+              {cityWithProvince(shortCity(r.to))}
+            </span>
+          </Space>
+          {/* 起降时间行 */}
+          <Space size={8} wrap>
+            <span className="mono" style={{ fontSize: 12 }}>{r.dep_time || '--:--'} → {r.arr_time || '--:--'}</span>
+            {!(r.dep_time && r.arr_time) && (
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>时刻待查询</Typography.Text>
+            )}
+          </Space>
+        </Space>
+      ),
+    },
     { title: '日期', dataIndex: 'date', width: 110 },
-    { title: '类型', dataIndex: 'fare_type', width: 100, render: fareTag },
-    { title: '航班', dataIndex: 'flight', width: 100, render: (v) => <span className="mono">{v}</span> },
+    {
+      title: '档位', key: 'tiers', width: 130,
+      render: (_, r) => {
+        const list = Array.isArray(r.tiers) ? r.tiers : []
+        if (!list.length) return <Typography.Text type="secondary">—</Typography.Text>
+        return list.map((t) => (
+          <Tag key={t} color={String(t) === '666' ? 'gold' : 'purple'} style={{ marginInlineEnd: 4 }}>{t}</Tag>
+        ))
+      },
+    },
+    {
+      // 余票条件来自该命中记录对应的监控任务（按 task_id 匹配分组行），非抓到的余票张数
+      title: '余票条件', key: 'seat_cond', width: 140,
+      render: (_, r) => {
+        const t = taskOf(r)
+        const parts = []
+        if (t && Number(t.min_seats || 1) > 1) parts.push(`≥${t.min_seats}张`)
+        if (t && t.cabins && t.cabins.length) parts.push(`舱位 ${t.cabins.join('/')}`)
+        if (!t) return <Typography.Text type="secondary">—</Typography.Text>
+        if (!parts.length) return <Typography.Text type="secondary">不限</Typography.Text>
+        return (
+          <Space size={4} wrap>
+            {parts.map((p, i) => <Tag key={i} color={i === 0 ? 'blue' : 'purple'}>{p}</Tag>)}
+          </Space>
+        )
+      },
+    },
     {
       title: '价格(元)', dataIndex: 'price', width: 100, align: 'right',
       render: (v) => <span style={{ color: 'var(--color-low-price)', fontWeight: 700 }}>¥{v}</span>,
@@ -110,8 +276,28 @@ function Overview({ data, onGo, onToggleStatus }) {
 
       <Card
         style={{ marginTop: 16 }}
-        title="最近低价命中（最近 10 条）"
-        extra={<Button type="link" onClick={() => onGo('history')}>全部历史</Button>}
+        title="最近低价命中（最近 50 条）"
+        extra={
+          <Space>
+            <Button type="link" onClick={() => onGo('history')}>全部历史</Button>
+            <Popconfirm
+              title="清除最近低价命中记录？"
+              description="旧记录将归档为 price_history.jsonl.bak（可找回）。"
+              okText="清除"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
+              onConfirm={async () => {
+                try {
+                  const r = await api.clearPriceHistory()
+                  msg.success(r.message || '最近低价命中记录已清除')
+                  onChanged()
+                } catch (e) { msg.error(e.message) }
+              }}
+            >
+              <Button size="small" danger icon={<DeleteIcon />}>清除历史记录</Button>
+            </Popconfirm>
+          </Space>
+        }
       >
         <Table
           rowKey={(_, i) => i}
@@ -119,6 +305,7 @@ function Overview({ data, onGo, onToggleStatus }) {
           pagination={false}
           dataSource={hits}
           columns={columns}
+          scroll={{ y: 400 }}
           locale={{ emptyText: <Empty description="暂无低价命中，监控运行后会出现在这里" /> }}
         />
       </Card>
@@ -127,7 +314,7 @@ function Overview({ data, onGo, onToggleStatus }) {
 }
 
 /* ================= 任务 ================= */
-function Tasks({ data, onChanged, msg, onGo }) {
+function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
   const tasks = data.tasks || []
 
   const toggleEnabled = async (t, enabled) => {
@@ -145,6 +332,137 @@ function Tasks({ data, onChanged, msg, onGo }) {
       onChanged()
     } catch (e) { msg.error(e.message) }
   }
+
+  // ---- 编辑弹窗 ----
+  const [editRow, setEditRow] = useState(null) // 当前编辑的分组行（null=关闭）
+  const [editBusy, setEditBusy] = useState(false)
+  const [cityOpts, setCityOpts] = useState([]) // 城市选项 {value: 三字码, label: 城市机场（IATA）}
+  const [dateOpts, setDateOpts] = useState([]) // 该航线真实可飞日期（编辑弹窗日期选项，逐日）
+  const [dateLoading, setDateLoading] = useState(false)
+  const [editForm] = Form.useForm()
+  // 档位条件（多选白名单，空=不限）：编辑弹窗日期池随其联动（档位×日期规则，如 666 节假日不可用）
+  const editTiers = Form.useWatch('tiers', editForm)
+
+  // 城市选项：首次打开编辑弹窗时拉取一次（/api/city/options 返回「城市机场（IATA）」列表）
+  const ensureCityOpts = async () => {
+    if (cityOpts.length) return
+    try {
+      const r = await api.cityOptions()
+      setCityOpts((r.options || []).map((s) => {
+        const m = String(s).match(/^(.*)（([A-Z0-9]{3})）$/)
+        return m ? { value: m[2], label: `${m[1]}（${m[2]}）` } : { value: s, label: s }
+      }))
+    } catch (e) { /* 选项拉取失败不影响编辑（可手输三字码） */ }
+  }
+
+  // 拉取该航线真实可飞日期（/api/flights/query 的 effective_dates 区间展开成逐日），作为编辑弹窗日期选项；
+  // 只保留可飞日期：原任务里无效日期在打开弹窗时剔除
+  const ensureDateOpts = async (t) => {
+    setDateLoading(true)
+    try {
+      const from = cityNameOf(t.from_city || t.from_code)
+      const to = cityNameOf(t.to_city || t.to_code)
+      const flightNo = String(t.flight_no || '').trim()
+      let r = await api.flightQuery({ from, to, flight_no: flightNo, limit: 300 })
+      let recs = r.records || []
+      // 底表查不到该航班号时：优先匹配起降时刻相同的记录（班期贴近该任务对应航班），
+      // 仍无匹配才退化为整条航线并集，避免把其他航班的可飞日期带进来
+      if (!recs.length && flightNo) {
+        r = await api.flightQuery({ from, to, limit: 300 })
+        recs = (r.records || []).filter((x) => String(x.dep_time || '') === String(t.dep_time || ''))
+        if (!recs.length) recs = r.records || []
+      }
+      // 只保留班期日历里可兑换的日期（区间 + 班期匹配，与 ScheduleCalendar 判定一致）；
+      // 档位×日期规则（tier_block_rules，如 666 档十一/五一/暑运不可用）不在拉取时固化，
+      // 由渲染层按弹窗内「档位条件」实时过滤（见 dateOptions / 联动 useEffect）
+      const dates = expandRecordDates(recs)
+      setDateOpts(dates)
+      if (dates.length) {
+        const cur = (editForm.getFieldValue('dates') || []).map((d) => String(d).trim()).filter((d) => dates.includes(d))
+        editForm.setFieldsValue({ dates: cur })
+      }
+    } catch (e) {
+      // 拉取失败静默：日期选项回退为原任务日期，用户仍可查看/保存
+      setDateOpts([])
+    } finally {
+      setDateLoading(false)
+    }
+  }
+
+  const openEdit = async (t) => {
+    setEditRow(t)
+    ensureCityOpts()
+    ensureDateOpts(t)
+    editForm.setFieldsValue({
+      from_code: t.from_code,
+      to_code: t.to_code,
+      flight_no: t.flight_no || '',
+      dep_time: t.dep_time || '',
+      arr_time: t.arr_time || '',
+      dates: t.dates || [],
+      tiers: t.tiers || [],
+      min_seats: Number(t.min_seats || 1),
+      cabins: t.cabins || [],
+    })
+  }
+
+  const doUpdate = async () => {
+    let v
+    try {
+      v = await editForm.validateFields()
+    } catch (e) { return }
+    const dates = (v.dates || []).map((d) => String(d).trim()).filter(Boolean)
+    if (!dates.length) {
+      msg.error('至少保留一个监控日期')
+      return
+    }
+    setEditBusy(true)
+    try {
+      const r = await api.updateTasks(editRow.ids, {
+        dates,
+        tiers: v.tiers || [],
+        min_seats: Number(v.min_seats || 1),
+        cabins: v.cabins || [],
+      })
+      msg.success(r.message || '已更新监控任务')
+      setEditRow(null)
+      onChanged()
+    } catch (e) {
+      msg.error(e.message)
+    } finally {
+      setEditBusy(false)
+    }
+  }
+
+  const citySelectProps = {
+    showSearch: true,
+    optionFilterProp: 'label',
+    options: cityOpts,
+    placeholder: '搜索城市 / 机场 / 三字码',
+  }
+
+  // 档位×日期规则生效档位：弹窗内「档位条件」有值用其值，空=不限→按任务产品档位计算
+  const editEffTiers = (() => {
+    if (editTiers && editTiers.length) return editTiers
+    return String(editRow?.product || '').split('/').map((s) => s.trim()).filter(Boolean)
+  })()
+
+  // 编辑弹窗日期选项：正常为该航线可飞日期；拉取失败时回退为原任务日期（保证可保存）
+  const dateOptions = (() => {
+    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules)
+    return [...new Set(pool)].sort().map((d) => ({ value: d, label: d }))
+  })()
+
+  // 档位条件变化时，剔除已被档位×日期规则禁用的已选日期（如 666 档节假日不可用）
+  useEffect(() => {
+    if (!editRow) return
+    const cur = (editForm.getFieldValue('dates') || []).map((d) => String(d).trim()).filter(Boolean)
+    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules)
+    const allowed = new Set(pool)
+    const kept = cur.filter((d) => allowed.has(d))
+    if (kept.length !== cur.length) editForm.setFieldsValue({ dates: kept })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTiers, editRow, dateOpts])
 
   const stopTag = (t) => {
     const s = t.stop
@@ -172,13 +490,12 @@ function Tasks({ data, onChanged, msg, onGo }) {
       .join('；')
   }
 
-  // 监控日期行：最多展示 3 个日期 + 其余数量，悬停查看全部
-  // （不把日期全部平铺——flex-wrap 容器会把整列 max-content 撑成「所有日期一字排开」的宽度，
-  //   多日期任务会把航线列撑到极宽，后面列被推出屏幕外）
+  // 监控日期行：一行内最多展示 4 个日期 + 其余数量，悬停查看全部
+  // （单行展示不换行，超出部分收起为“+N”Tag，避免把航线列撑成多行换行）
   const DateCell = ({ dates }) => {
     const list = dates || []
     if (!list.length) return <Typography.Text type="secondary" style={{ fontSize: 12 }}>—</Typography.Text>
-    const shown = list.slice(0, 3)
+    const shown = list.slice(0, 4)
     const rest = list.length - shown.length
     const tip = (
       <div style={{ maxWidth: 320, maxHeight: 260, overflow: 'auto', fontSize: 12, lineHeight: 1.9 }}>
@@ -187,10 +504,10 @@ function Tasks({ data, onChanged, msg, onGo }) {
     )
     return (
       <Tooltip title={tip} placement="top">
-        <Space size={4} wrap style={{ cursor: 'default' }}>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>监控：</Typography.Text>
-          {shown.map((d) => <Tag key={d} style={{ marginInlineEnd: 0 }}>{d}</Tag>)}
-          {rest > 0 && <Tag color="blue" style={{ marginInlineEnd: 0 }}>+{rest}</Tag>}
+        <Space size={4} style={{ cursor: 'default', flexWrap: 'nowrap', maxWidth: '100%', overflow: 'hidden' }}>
+          <Typography.Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>监控：</Typography.Text>
+          {shown.map((d) => <Tag key={d} style={{ marginInlineEnd: 0, flexShrink: 0 }}>{d}</Tag>)}
+          {rest > 0 && <Tag color="blue" style={{ marginInlineEnd: 0, flexShrink: 0 }}>+{rest}</Tag>}
         </Space>
       </Tooltip>
     )
@@ -198,7 +515,7 @@ function Tasks({ data, onChanged, msg, onGo }) {
 
   const columns = [
     {
-      title: '航线', key: 'route', width: 320,
+      title: '航线', key: 'route', width: 520,
       render: (_, t) => (
         <Space direction="vertical" size={3} style={{ padding: '4px 0' }}>
           {/* 标题行：航班号 + 城市（省份） → 城市（省份） + 经停/中转 tag */}
@@ -243,6 +560,16 @@ function Tasks({ data, onChanged, msg, onGo }) {
       },
     },
     {
+      title: '提醒档位', key: 'tiers', width: 130,
+      render: (_, t) => {
+        const list = t.tiers || []
+        if (!list.length) return <Typography.Text type="secondary">不限</Typography.Text>
+        return list.map((p) => (
+          <Tag key={p} color="gold" style={{ marginInlineEnd: 4 }}>{p}</Tag>
+        ))
+      },
+    },
+    {
       title: '目标价', key: 'target', width: 100,
       render: () => <span style={{ color: 'var(--color-low-price)', fontWeight: 700 }}>¥199</span>,
     },
@@ -269,15 +596,20 @@ function Tasks({ data, onChanged, msg, onGo }) {
       ),
     },
     {
-      title: '操作', key: 'op', width: 180,
+      title: '操作', key: 'op', width: 190,
       render: (_, t) => (
-        <Space size={8}>
-          <Switch
-            checked={t.enabled}
-            checkedChildren="监控中"
-            unCheckedChildren="已停止"
-            onChange={(v) => toggleEnabled(t, v)}
-          />
+        <Space size={4}>
+          <Button
+            size="small"
+            type={t.enabled ? 'default' : 'primary'}
+            icon={<PowerIcon />}
+            onClick={() => toggleEnabled(t, !t.enabled)}
+          >
+            {t.enabled ? '停止' : '启动'}
+          </Button>
+          <Tooltip title="编辑">
+            <Button size="small" type="text" icon={<EditIcon />} onClick={() => openEdit(t)} />
+          </Tooltip>
           <Popconfirm
             title={`删除监控 ${t.from_city} → ${t.to_city}`}
             description="删除后 daemon 将不再查询，价格历史保留。不可撤销。"
@@ -286,7 +618,9 @@ function Tasks({ data, onChanged, msg, onGo }) {
             okButtonProps={{ danger: true }}
             onConfirm={() => doDelete(t)}
           >
-            <Button type="text" danger icon={<DeleteIcon />}>删除</Button>
+            <Tooltip title="删除">
+              <Button size="small" type="text" danger icon={<DeleteIcon />} />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -322,6 +656,104 @@ function Tasks({ data, onChanged, msg, onGo }) {
           }}
         />
       </Card>
+
+      <Modal
+        open={!!editRow}
+        title={editRow ? `编辑监控任务：${cityWithProvince(shortCity(editRow.from_city))} → ${cityWithProvince(shortCity(editRow.to_city))}${editRow.flight_no ? ` · ${editRow.flight_no}` : ''}` : ''}
+        width={680}
+        okText="保存"
+        okButtonProps={{ loading: editBusy }}
+        cancelText="取消"
+        onCancel={() => setEditRow(null)}
+        onOk={doUpdate}
+        destroyOnClose={false}
+      >
+        <Form form={editForm} layout="vertical">
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="from_code" label="出发地（不可改）">
+                <Select {...citySelectProps} disabled />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="to_code" label="到达地（不可改）">
+                <Select {...citySelectProps} disabled />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={12}>
+            <Col span={8}>
+              <Form.Item name="flight_no" label="航班号（不可改）">
+                <Input disabled className="mono" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="dep_time" label="起飞时刻（不可改）">
+                <Input disabled placeholder="HH:MM" className="mono" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="arr_time" label="到达时刻（不可改）">
+                <Input disabled placeholder="HH:MM" className="mono" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item
+            name="dates"
+            label="监控日期"
+            rules={[{ required: true, message: '至少保留一个监控日期' }]}
+          >
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="选择要监控的日期"
+              optionFilterProp="label"
+              maxTagCount="responsive"
+              loading={dateLoading}
+              options={dateOptions}
+            />
+          </Form.Item>
+          <Row gutter={12}>
+            <Col span={8}>
+              <Form.Item name="tiers" label="档位条件（多选，空=不限）" extra={<span style={{ fontSize: 12 }}>只提醒选中的档位；空=全部档位</span>}>
+                <Select
+                  mode="multiple"
+                  placeholder="不限"
+                  options={TIER_OPTIONS}
+                  maxTagCount="responsive"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={7}>
+              <Form.Item name="min_seats" label="余票条件">
+                <Select
+                  options={[
+                    { label: '不限（有票即提醒）', value: 1 },
+                    { label: '至少 2 张', value: 2 },
+                    { label: '至少 3 张', value: 3 },
+                    { label: '至少 4 张', value: 4 },
+                    { label: '至少 5 张', value: 5 },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={9}>
+              <Form.Item name="cabins" label="舱位白名单（空=不限舱位）">
+                <Select
+                  mode="tags"
+                  placeholder="如 B、C、Z、R…"
+                  options={CABIN_OPTIONS.map((c) => ({ value: c, label: c }))}
+                  tokenSeparators={[',', '，']}
+                  maxTagCount="responsive"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          {editRow && (editRow.ids || []).length > 1 && (
+            <Alert type="warning" showIcon message={`该组包含 ${editRow.ids.length} 条底层任务（同一航班的多个监控日期），保存将对组内全部任务生效。`} />
+          )}
+        </Form>
+      </Modal>
     </div>
   )
 }
@@ -525,6 +957,28 @@ function MonitorSettings({ data, onChanged, msg }) {
   const [signRefresh, setSignRefresh] = useState(cfg.sign_refresh || false)
   const [priceQueryOn, setPriceQueryOn] = useState(cfg.price_query?.enabled !== false)
   const [priceQueryInterval, setPriceQueryInterval] = useState(cfg.price_query?.min_interval || 8)
+  // 监控频率（daemon 轮询间隔范围，秒）：与「实时查价」不同，这里控制后台多久查一次价
+  const polling = cfg.polling || {}
+  const [pollingForm, setPollingForm] = useState({
+    day_min_sec: polling.day_min_sec ?? 90,
+    day_max_sec: polling.day_max_sec ?? 240,
+    night_min_sec: polling.night_min_sec ?? 300,
+    night_max_sec: polling.night_max_sec ?? 600,
+  })
+  const setPoll = (k) => (v) => setPollingForm((prev) => ({ ...prev, [k]: v }))
+
+  const savePolling = async () => {
+    setBusy('polling')
+    try {
+      const r = await api.savePolling(pollingForm)
+      msg.success('监控频率已保存，daemon 下一轮生效')
+      if (r.polling) setPollingForm({
+        day_min_sec: r.polling.day_min_sec, day_max_sec: r.polling.day_max_sec,
+        night_min_sec: r.polling.night_min_sec, night_max_sec: r.polling.night_max_sec,
+      })
+      onChanged()
+    } catch (e) { msg.error(e.message) } finally { setBusy('') }
+  }
 
   const saveWindow = async () => {
     setBusy('window')
@@ -605,6 +1059,44 @@ function MonitorSettings({ data, onChanged, msg }) {
             航班信息（起降时刻/经停/航站楼）的更新走「第三方校正」机制（data/sediment/third_party/），
             不依赖实时查价；如担心被风控可随时关掉本开关，不影响航班信息查询。
           </Typography.Text>
+        </Space>
+      </Card>
+
+      {/* 监控频率（daemon 轮询节奏，区别于实时查价） */}
+      <Card style={{ marginTop: 16, marginBottom: 16 }} title="监控频率（daemon 轮询节奏）">
+        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+          <Alert
+            type="info"
+            showIcon
+            message="「监控频率」= 后台 daemon 每隔多久模拟点击一次查询，只影响监控任务的抓价节奏。频率越低越不容易被风控，但价格更新越慢。"
+          />
+          <Row gutter={16} align="middle">
+            <Col xs={24} md={12}>
+              <Space size={8} wrap>
+                <Typography.Text strong>日间（07:00-23:00）</Typography.Text>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>间隔</Typography.Text>
+                <InputNumber min={10} max={3600} value={pollingForm.day_min_sec} onChange={setPoll('day_min_sec')} addonAfter="秒" style={{ width: 110 }} />
+                <Typography.Text type="secondary">~</Typography.Text>
+                <InputNumber min={10} max={3600} value={pollingForm.day_max_sec} onChange={setPoll('day_max_sec')} addonAfter="秒" style={{ width: 110 }} />
+              </Space>
+            </Col>
+            <Col xs={24} md={12}>
+              <Space size={8} wrap>
+                <Typography.Text strong>夜间（23:00-07:00）</Typography.Text>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>间隔</Typography.Text>
+                <InputNumber min={10} max={3600} value={pollingForm.night_min_sec} onChange={setPoll('night_min_sec')} addonAfter="秒" style={{ width: 110 }} />
+                <Typography.Text type="secondary">~</Typography.Text>
+                <InputNumber min={10} max={3600} value={pollingForm.night_max_sec} onChange={setPoll('night_max_sec')} addonAfter="秒" style={{ width: 110 }} />
+              </Space>
+            </Col>
+          </Row>
+          <Space>
+            <Button type="primary" loading={busy === 'polling'} onClick={savePolling}>保存频率</Button>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              建议：日间 90~240 秒、夜间 300~600 秒可平衡及时性与风控；夜间无敏感航班可放宽到 5~10 分钟。
+              改为极短间隔（如 10 秒）会显著提高被海航限流风险，请谨慎。
+            </Typography.Text>
+          </Space>
         </Space>
       </Card>
 
@@ -710,10 +1202,21 @@ function GuideIcon({ title, steps }) {
 function ChannelCard({
   name, title, color, guide, view, fields = [], busy, msg, onSave, onTest,
   showSwitch = true, statusLine, testResult, onClearTest, children,
+  configured = true, // 未配置时右上角开关禁用（防止开启一个没法用的渠道）
 }) {
   const [form] = Form.useForm()
   const [editing, setEditing] = useState(false)
   const enabled = !!view?.enabled
+
+  // 测试结果自动消失：成功 5 秒、失败 10 秒后关闭，避免常驻遮住卡片操作。
+  // 用 ref 持有最新 onClearTest，避免轮询刷新导致父组件重建回调而重置计时器。
+  const onClearRef = useRef(onClearTest)
+  onClearRef.current = onClearTest
+  useEffect(() => {
+    if (!testResult) return undefined
+    const timer = setTimeout(() => onClearRef.current(), testResult.ok ? 5000 : 10000)
+    return () => clearTimeout(timer)
+  }, [testResult])
 
   const save = async () => {
     const vals = form.getFieldsValue() || {}
@@ -758,7 +1261,7 @@ function ChannelCard({
             {guide && <GuideIcon title={guide.title} steps={guide.steps} />}
           </Space>
         }
-        extra={showSwitch && <Switch size="small" checked={enabled} loading={busy === 'notify-save'} onChange={toggle} />}
+        extra={showSwitch && <Switch size="small" checked={configured ? enabled : false} disabled={!configured} loading={busy === 'notify-save'} onChange={toggle} />}
       >
         {/* 状态/配置信息行：所有卡片统一在最上方一行（12px 小字） */}
         <div className="channel-status">
@@ -770,7 +1273,7 @@ function ChannelCard({
           ? children({ form, editing, setEditing, enabled })
           : !editing && (
             <Space wrap>
-              <Button size="small" type={enabled ? 'default' : 'primary'} ghost={enabled} loading={busy === `test-${name}`} onClick={onTest}>
+              <Button size="small" icon={<SendIcon />} loading={busy === `test-${name}`} onClick={onTest}>
                 发送测试消息
               </Button>
               <Button size="small" icon={<SettingsIcon />} onClick={() => { form.setFieldsValue({ ...view }); setEditing(true) }}>
@@ -805,8 +1308,17 @@ function ChannelCard({
             <Alert
               type={testResult.ok ? 'success' : 'error'}
               showIcon
-              message={testResult.text}
-              action={<Button size="small" type="text" onClick={onClearTest}>关闭</Button>}
+              message={
+                <Typography.Text
+                  style={{ fontSize: 12, lineHeight: '20px', display: 'block' }}
+                  ellipsis={{ tooltip: testResult.text }}
+                >
+                  {testResult.text}
+                </Typography.Text>
+              }
+              action={
+                <Button type="text" size="small" icon={<CloseIcon />} aria-label="关闭测试结果" onClick={onClearTest} />
+              }
             />
           )}
         </div>
@@ -891,8 +1403,8 @@ function Notifications({ data, onChanged, msg }) {
         receiver: values.receiver || '',
       })
       if (r.success) {
-        msg.success('测试消息已发送，请到飞书查看')
-        setTest('feishu', true, '测试消息已发送，请到飞书查看')
+        msg.success('测试卡片已发送，请到飞书点击按钮验证确认回执')
+        setTest('feishu', true, '测试卡片已发送，请到飞书点击按钮验证确认回执')
       } else {
         msg.error(r.error || '测试消息发送失败')
         setTest('feishu', false, `发送失败：${r.error || '未知错误'}`)
@@ -943,7 +1455,7 @@ function Notifications({ data, onChanged, msg }) {
         { title: '开通权限并发布', description: '权限管理开通 im:message:send_as_bot、im:message:urgent_app 等，发布版本并等待审核通过' },
         { title: '事件订阅选长连接', description: '事件与回调 → 长连接模式，无需公网回调地址' },
         { title: '复制凭证', description: '「凭证与基础信息」中复制 App ID / App Secret；接收人填你的飞书邮箱或 ou_ 开头的 OpenID' },
-        { title: '保存并测试', description: '填入表单保存；发测试消息，再点「发送确认卡片」到飞书点按钮验证回执' },
+        { title: '保存并测试', description: '填入表单保存；「发送测试消息」默认发确认卡片，到飞书点按钮验证回执' },
       ],
     },
     wecom: {
@@ -986,83 +1498,91 @@ function Notifications({ data, onChanged, msg }) {
 
   const channelCards = [
     {
-      name: 'wechat', title: '微信', color: '#07c160',
-      view: {}, showSwitch: false,
+      name: 'wechat', title: '微信公众号（『方糖』服务号）', color: '#07c160',
+      view: cfg.wechat || {}, showSwitch: true, configured: cfg.send_keys_count > 0,
       guide: guides.wechat,
       statusLine: (
         <Space size={6}>
           <Tag color={cfg.send_keys_count > 0 ? 'green' : 'orange'}>
             {cfg.send_keys_count > 0 ? `已绑定 ${cfg.send_keys_count} 个` : '未配置'}
           </Tag>
-          {cfg.send_keys_count > 0 && (
-            <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: '20px' }} ellipsis={{ tooltip: '低价与 Token 过期告警会推送到微信' }}>
-              低价与 Token 过期告警推送到微信
-            </Typography.Text>
-          )}
         </Space>
       ),
-      children: () => (cfg.send_keys_count > 0 && !showWechatForm ? (
-        <Space wrap>
-          <Button size="small" loading={busy === 'test'} onClick={testAlert}>发送测试消息</Button>
-          <Button size="small" icon={<SettingsIcon />} onClick={() => setShowWechatForm(true)}>重新配置</Button>
-        </Space>
-      ) : (
+      children: () => (
         <>
-          {cfg.send_keys_count === 0 && (
-            <Steps
-              direction="vertical"
-              size="small"
-              current={5}
-              items={guides.wechat.steps}
-              style={{ marginBottom: 10 }}
-            />
+          {cfg.send_keys_count > 0 && !showWechatForm ? (
+            <Space wrap>
+              <Button size="small" icon={<SendIcon />} loading={busy === 'test'} onClick={testAlert}>发送测试消息</Button>
+              <Button size="small" icon={<SettingsIcon />} onClick={() => setShowWechatForm(true)}>重新配置</Button>
+            </Space>
+          ) : (
+            <>
+              {cfg.send_keys_count === 0 && (
+                <Steps
+                  direction="vertical"
+                  size="small"
+                  current={5}
+                  items={guides.wechat.steps}
+                  style={{ marginBottom: 10 }}
+                />
+              )}
+              <Input.TextArea
+                rows={3}
+                placeholder="每行粘贴一个 SendKey，例如 SCT123..."
+                value={keysRaw}
+                onChange={(e) => setKeysRaw(e.target.value)}
+                style={{ fontSize: 12 }}
+              />
+              <Space wrap style={{ marginTop: 8 }}>
+                <Button type="primary" size="small" icon={<SendIcon />} loading={busy === 'keys'} onClick={saveKeys}>保存并验证</Button>
+                <Button size="small" icon={<SendIcon />} loading={busy === 'test'} onClick={testAlert}>发送测试消息</Button>
+                {cfg.send_keys_count > 0 && (
+                  <Button size="small" onClick={() => { setShowWechatForm(false); setKeysRaw('') }}>收起</Button>
+                )}
+              </Space>
+            </>
           )}
-          <Input.TextArea
-            rows={3}
-            placeholder="每行粘贴一个 SendKey，例如 SCT123..."
-            value={keysRaw}
-            onChange={(e) => setKeysRaw(e.target.value)}
-            style={{ fontSize: 12 }}
-          />
-          <Space wrap style={{ marginTop: 8 }}>
-            <Button type="primary" size="small" loading={busy === 'keys'} onClick={saveKeys}>保存并验证</Button>
-            <Button size="small" loading={busy === 'test'} onClick={testAlert}>发送测试消息</Button>
-            {cfg.send_keys_count > 0 && (
-              <Button size="small" onClick={() => { setShowWechatForm(false); setKeysRaw('') }}>收起</Button>
-            )}
-          </Space>
         </>
-      )),
+      ),
     },
     {
       name: 'feishu', title: '飞书', color: '#3370ff',
-      view: {}, showSwitch: false,
+      view: feishu, showSwitch: true, configured: !!feishu.configured,
       guide: guides.feishu,
       statusLine: (
         <Space size={6}>
-          {feishu.configured
-            ? <Tag color="green">{feishu.has_secret ? '已配置' : '配置不完整'}</Tag>
-            : <Tag color="orange">未配置</Tag>}
-          {wsStateTag(ws)}
-          {feishu.configured && (
-            <Typography.Text
-              type="secondary"
-              style={{ fontSize: 12, lineHeight: '20px' }}
-              ellipsis={{ tooltip: `App ID：${feishu.app_id}；接收人：${feishu.receiver || '—'}；长连接事件 ${ws.event_count || 0} 次${ws.last_event_ts ? `，最近 ${formatTs(ws.last_event_ts)}` : ''}` }}
-            >
-              App {feishu.app_id} · {feishu.receiver || '未设接收人'} · 事件 {ws.event_count || 0} 次
-            </Typography.Text>
+          {feishu.configured ? (
+            <Tooltip title={
+              <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+                <div>App ID：{feishu.app_id}</div>
+                <div>接收人：{feishu.receiver || '—'}</div>
+                <div>App Secret 已设置（不回显）</div>
+                <div>长连接事件 {ws.event_count || 0} 次{ws.last_event_ts ? `，最近 ${formatTs(ws.last_event_ts)}` : ''}</div>
+              </div>
+            }>
+              <Tag color="green" style={{ cursor: 'help' }}>已配置</Tag>
+            </Tooltip>
+          ) : feishu.has_secret ? (
+            <Tag color="orange">配置不完整</Tag>
+          ) : (
+            <Tag color="orange">未配置</Tag>
           )}
+          {wsStateTag(ws)}
         </Space>
       ),
       children: () => (feishu.configured && !showFeishuForm ? (
-        <Space wrap>
-          <Button size="small" loading={busy === 'feishu-test'} onClick={sendTestFeishu}>发送测试消息</Button>
-          <Button size="small" type="primary" ghost loading={busy === 'test-feishu'} onClick={() => testChannel('feishu', '飞书')}>
-            发送确认卡片
-          </Button>
-          <Button size="small" icon={<SettingsIcon />} onClick={() => setShowFeishuForm(true)}>重新配置</Button>
-        </Space>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <Space wrap>
+            <Button size="small" icon={<SendIcon />} loading={busy === 'test-feishu'} onClick={() => testChannel('feishu', '飞书')}>发送测试消息</Button>
+            <Button size="small" icon={<SettingsIcon />} onClick={() => setShowFeishuForm(true)}>重新配置</Button>
+          </Space>
+          <Space size={4}>
+            <Tooltip title="低价提醒默认应用内加急（免费）；关闭后仅普通推送">
+              <Typography.Text type="secondary" style={{ fontSize: 12, cursor: 'help' }}>默认加急</Typography.Text>
+            </Tooltip>
+            <Switch size="small" checked={!!feishu.urgent_enabled} loading={busy === 'notify-save'} onChange={(v) => saveNotify({ feishu: { urgent_enabled: v } })} />
+          </Space>
+        </div>
       ) : (
         <>
           {!feishu.configured && (
@@ -1091,7 +1611,7 @@ function Notifications({ data, onChanged, msg }) {
           </Form>
           <Space wrap>
             <Button type="primary" size="small" loading={busy === 'feishu-save'} onClick={saveFeishu} icon={<SendIcon />}>保存配置</Button>
-            <Button size="small" loading={busy === 'feishu-test'} onClick={sendTestFeishu}>发送测试消息</Button>
+            <Button size="small" icon={<SendIcon />} loading={busy === 'feishu-test'} onClick={sendTestFeishu}>发送测试消息</Button>
             {feishu.configured && (
               <Button size="small" onClick={() => { setShowFeishuForm(false); fsForm.resetFields() }}>收起</Button>
             )}
@@ -1102,6 +1622,7 @@ function Notifications({ data, onChanged, msg }) {
     {
       name: 'wecom', title: '企业微信', color: '#0082ef',
       view: nch.wecom || {}, guide: guides.wecom,
+      configured: !!(nch.wecom?.corp_id && nch.wecom?.agent_id && nch.wecom?.user_id && nch.wecom?.secret),
       fields: [
         { key: 'corp_id', label: '企业ID', placeholder: 'ww 开头', secret: true },
         { key: 'agent_id', label: '应用 AgentId', secret: true },
@@ -1111,7 +1632,7 @@ function Notifications({ data, onChanged, msg }) {
     },
     {
       name: 'dingtalk', title: '钉钉', color: '#2a9df4',
-      view: nch.dingtalk || {}, guide: guides.dingtalk,
+      view: nch.dingtalk || {}, guide: guides.dingtalk, configured: !!nch.dingtalk?.webhook,
       fields: [
         { key: 'webhook', label: 'Webhook 地址', placeholder: 'https://oapi.dingtalk.com/robot/send?access_token=...', secret: false },
         { key: 'secret', label: '加签密钥（可选）', keepEmpty: true, secret: true },
@@ -1119,7 +1640,7 @@ function Notifications({ data, onChanged, msg }) {
     },
     {
       name: 'bark', title: 'iOS · Bark', color: '#f3a933',
-      view: nch.bark || {}, guide: guides.bark,
+      view: nch.bark || {}, guide: guides.bark, configured: !!nch.bark?.device_key,
       fields: [
         { key: 'device_key', label: '设备 Key', keepEmpty: true, secret: true },
         { key: 'server', label: '服务地址', placeholder: '默认 https://api.day.app，自建可改' },
@@ -1127,7 +1648,7 @@ function Notifications({ data, onChanged, msg }) {
     },
     {
       name: 'ntfy', title: '安卓 · ntfy', color: '#17b26a',
-      view: nch.ntfy || {}, guide: guides.ntfy,
+      view: nch.ntfy || {}, guide: guides.ntfy, configured: !!nch.ntfy?.topic,
       fields: [
         { key: 'topic', label: '主题 Topic', keepEmpty: true, secret: true },
         { key: 'server', label: '服务器地址', placeholder: '默认 https://ntfy.sh，自建可改' },
@@ -1174,6 +1695,7 @@ function Notifications({ data, onChanged, msg }) {
               onTest={() => testChannel(c.name, c.title)}
               guide={c.guide}
               showSwitch={c.showSwitch}
+              configured={c.configured}
               statusLine={c.statusLine}
               testResult={tests[c.name]}
               onClearTest={() => clearTest(c.name)}
@@ -1189,6 +1711,24 @@ function Notifications({ data, onChanged, msg }) {
         style={{ marginBottom: 16 }}
         size="small"
         title={<Space><HistoryIcon />通知历史（最近 {historyRows.length} 条）</Space>}
+        extra={
+          <Popconfirm
+            title="清除通知历史？"
+            description="旧记录将归档为 notification_history.jsonl.bak（可找回）。"
+            okText="清除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            onConfirm={async () => {
+              try {
+                const r = await api.clearNotifyHistory()
+                msg.success(r.message || '通知历史已清除')
+                onChanged()
+              } catch (e) { msg.error(e.message) }
+            }}
+          >
+            <Button size="small" danger icon={<DeleteIcon />}>清除</Button>
+          </Popconfirm>
+        }
       >
         <Table
           rowKey={(_, i) => i}
@@ -1228,7 +1768,7 @@ function fmtDays(days = []) {
 
 function fmtDateRanges(ranges = []) {
   if (!ranges || !ranges.length) return '—'
-  return ranges.map(([a, b]) => (a === b ? a.slice(5) : `${a.slice(5)}~${b.slice(5)}`)).join('、')
+  return mergeRanges(ranges).map(([a, b]) => (a === b ? a.slice(5) : `${a.slice(5)}~${b.slice(5)}`)).join('、')
 }
 
 function cityNameOf(label) {
@@ -1357,7 +1897,7 @@ function ScheduleCalendar({ rec }) {
   )
 }
 
-function FlightQuery({ msg, onChanged, priceQuery }) {
+function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -1380,6 +1920,11 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
   const [batchGroups, setBatchGroups] = useState([])
   const [batchMinSeats, setBatchMinSeats] = useState(0) // 0=不限
   const [batchCabins, setBatchCabins] = useState([]) // 舱位白名单，空=不限
+  const [batchTier, setBatchTier] = useState([]) // 档位条件多选白名单：666/2666/66666；空数组=不限（全部档位）
+  const [batchMode, setBatchMode] = useState('single') // 弹窗标题模式：single=转为监控任务 / batch=批量转为监控任务
+  // 冻结查询列：开启时固定首列（航班号）+ 后四列（原价/优惠价/余票舱位/操作），横向滚动时仍可见
+  // 默认不冻结（用户手动开启）
+  const [freezeQuery, setFreezeQuery] = useState(false)
 
   const watch = Form.useWatch([], form)
   const dateMode = (watch && watch.dateMode) || 'none'
@@ -1497,22 +2042,6 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
     }
   }
 
-  // 展开 effective_dates 区间到逐日（去重排序）
-  const expandDates = (ranges) => {
-    const seen = new Set()
-    for (const [a, b] of ranges || []) {
-      let cur = dayjs(a)
-      const end = dayjs(b)
-      let guard = 0
-      while (!cur.isAfter(end) && guard < 400) {
-        seen.add(cur.format('YYYY-MM-DD'))
-        cur = cur.add(1, 'day')
-        guard += 1
-      }
-    }
-    return [...seen].sort()
-  }
-
   // 按「航线+航班号+起降时刻」分组生成弹窗清单：同一天内多个起飞时间的航班各自成组
   const openBatch = (keys) => {
     const recs = (result?.records || []).filter((_, i) => keys.includes(i))
@@ -1535,19 +2064,19 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
           dep_time: r.dep_time || '',
           arr_time: r.arr_time || '',
           product: new Set(),
-          ranges: [],
           dates: [],
           rows: [],
         })
       }
       const g = groups[idx[gkey]]
       for (const p of String(r.product || '').split('/')) if (p) g.product.add(p)
-      for (const range of r.effective_dates || []) g.ranges.push(range)
       g.rows.push(r)
     }
     for (const g of groups) {
       g.product = [...g.product].sort().join('/')
-      g.dates = expandDates(g.ranges)
+      // 只保留班期日历里可兑换的日期（区间 + 班期匹配，与 ScheduleCalendar 判定一致），
+      // 并按档位剔除产品规则禁用的日期（tier_block_rules，如 666 档十一/五一/暑运不可用）
+      g.dates = filterTierDates(expandRecordDates(g.rows), g.product, tierBlockRules)
       // prefill 搜索日期：单日选该日，区间选区间内的可飞日期
       if (searchRange) {
         const [a, b] = searchRange
@@ -1562,6 +2091,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
     setBatchGroups(groups)
     setBatchMinSeats(0)
     setBatchCabins([])
+    setBatchTier([])
     setBatchOpen(true)
   }
 
@@ -1575,6 +2105,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
           to_code: g.to_iata || row.dest?.iata,
           dates: g.selected,
           product: g.product,
+          tiers: batchTier,
           flight_no: row.flight_no || '',
           dep_time: row.dep_time || '',
           arr_time: row.arr_time || '',
@@ -1604,15 +2135,13 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
   }
 
   const goMonitor = (rec, index) => {
+    setBatchMode('single')
     setSelKeys([index])
     openBatch([index])
   }
 
-  // 舱位白名单常见值（可手输任意舱位码，回车添加）
-  const CABIN_OPTIONS = ['B', 'C', 'Y', 'Z', 'R', 'H', 'K', 'L', 'M', 'N', 'Q', 'T', 'X', 'E', 'U', 'V', 'W', 'G', 'S']
-
   const columns = [
-    { title: '航班号', dataIndex: 'flight_no', width: 110, fixed: 'left', render: (v) => <span className="mono">{v}</span> },
+    { title: '航班号', dataIndex: 'flight_no', width: 110, fixed: freezeQuery ? 'left' : undefined, render: (v) => <span className="mono">{v}</span> },
     { title: '航司', dataIndex: 'carrier', width: 90 },
     {
       title: '出发', key: 'origin', width: 170,
@@ -1700,7 +2229,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
         return first ? <span className="mono">{first.slice(5)}</span> : '—'
       },
     },
-    { title: '可飞日期', dataIndex: 'effective_dates', width: 180, render: fmtDateRanges },
+    { title: '日期', dataIndex: 'effective_dates', width: 180, render: fmtDateRanges },
     {
       title: '档位', dataIndex: 'product', width: 130,
       render: (v) => {
@@ -1712,7 +2241,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
       },
     },
     {
-      title: '原价', key: 'orig_price', width: 100, fixed: 'right',
+      title: '原价', key: 'orig_price', width: 100, fixed: freezeQuery ? 'right' : undefined,
       render: (_, r) => {
         if (priceLoading) return <Spin size="small" />
         const v = prices?.normal?.prices?.[r.flight_no]
@@ -1722,7 +2251,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
       },
     },
     {
-      title: '优惠价', key: 'plus_price', width: 100, fixed: 'right',
+      title: '优惠价', key: 'plus_price', width: 100, fixed: freezeQuery ? 'right' : undefined,
       render: (_, r) => {
         if (priceLoading) return <Spin size="small" />
         const v = prices?.plus?.prices?.[r.flight_no]
@@ -1732,7 +2261,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
       },
     },
     {
-      title: '余票/舱位', key: 'seats', width: 180, fixed: 'right',
+      title: '余票/舱位', key: 'seats', width: 180, fixed: freezeQuery ? 'right' : undefined,
       render: (_, r) => {
         if (priceLoading) return <Spin size="small" />
         const s = seatsInfo?.plus?.[r.flight_no] || seatsInfo?.normal?.[r.flight_no]
@@ -1760,7 +2289,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
       },
     },
     {
-      title: '操作', key: 'op', width: 170, fixed: 'right',
+      title: '操作', key: 'op', width: 170, fixed: freezeQuery ? 'right' : undefined,
       render: (_, r, index) => (
         <Space size={4} wrap>
           <Button size="small" icon={<CalendarIcon />} onClick={() => setCalRec(r)}>班期日历</Button>
@@ -1780,20 +2309,25 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
         style={{ marginBottom: 16 }}
         title="随心飞航线查询"
       >
-        <Form form={form} layout="vertical" onFinish={submit} initialValues={{ product: '666', dateMode: 'none' }}>
+        <Form form={form} layout="vertical" onFinish={submit} initialValues={{ product: 'all', dateMode: 'none' }}>
           <Row gutter={16}>
-            <Col xs={24} lg={12}>
+            <Col xs={24} lg={8}>
               <Form.Item name="from" label="出发地（联动：只显示能查到航线的城市）">
                 <Select placeholder="城市 / 机场 / 三字码" {...optProps(linkOpts.from)} />
               </Form.Item>
             </Col>
-            <Col xs={24} lg={12}>
+            <Col xs={24} lg={8}>
               <Form.Item name="to" label="到达地（联动：只显示能查到航线的城市）">
                 <Select placeholder="城市 / 机场 / 三字码" {...optProps(linkOpts.to)} />
               </Form.Item>
             </Col>
+            <Col xs={24} lg={8}>
+              <Form.Item name="flight_no" label="航班号（可选）">
+                <Input placeholder="如 JD / JD5037" />
+              </Form.Item>
+            </Col>
             <Col xs={24} lg={12}>
-              <Form.Item label="可飞日期">
+              <Form.Item label="日期">
                 <Space wrap style={{ width: '100%' }}>
                   <Form.Item name="dateMode" noStyle>
                     <Radio.Group options={[
@@ -1814,24 +2348,20 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
                 </Space>
               </Form.Item>
             </Col>
-            <Col xs={24} lg={12}>
+            <Col xs={24} lg={6}>
               <Form.Item name="product" label="产品档位">
-                <Segmented
-                  block
+                <Select
+                  placeholder="全部"
                   options={[
+                    { label: '全部', value: 'all' },
                     { label: '666', value: '666' },
                     { label: '2666', value: '2666' },
-                    { label: '全部', value: 'all' },
+                    { label: '3666', value: '3666' },
                   ]}
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} lg={12}>
-              <Form.Item name="flight_no" label="航班号（可选）">
-                <Input placeholder="如 JD / JD5037" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} lg={12}>
+            <Col xs={24} lg={6}>
               <Form.Item label=" " colon={false}>
                 <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
                   <Button onClick={() => { form.resetFields(); setResult(null); setErrMsg(''); setPrices(null); setStopsInfo(null); setTimesMap(null); setSeatsInfo(null); setPriceTried(false); setSelKeys([]) }}>清空</Button>
@@ -1848,14 +2378,20 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
         <Card
           title={`查询结果（${result.count} 条）`}
           extra={
-            <Button
-              type="primary"
-              icon={<PlusIcon />}
-              disabled={!selKeys.length}
-              onClick={() => openBatch(selKeys)}
-            >
-              批量转为监控任务{selKeys.length ? `（${selKeys.length}）` : ''}
-            </Button>
+            <Space wrap>
+              <Space size={4}>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>冻结查询列</Typography.Text>
+                <Switch size="small" checked={freezeQuery} onChange={setFreezeQuery} />
+              </Space>
+              <Button
+                type="primary"
+                icon={<PlusIcon />}
+                disabled={!selKeys.length}
+                onClick={() => { setBatchMode('batch'); openBatch(selKeys) }}
+              >
+                批量转为监控任务{selKeys.length ? `（${selKeys.length}）` : ''}
+              </Button>
+            </Space>
           }
         >
           {noDateWarn && (
@@ -1866,7 +2402,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
               message={null}
               description={
                 <span style={{ fontSize: 12 }}>
-                  已选择日期的前提下才能查询原价/优惠价与经停信息。当前未选择可飞日期，结果列表仅展示底表静态信息（航司/班期/档位）。选择单日后重新查询即可看到实时价格与经停。
+                  已选择日期的前提下才能查询原价/优惠价与经停信息。当前未选择日期，结果列表仅展示静态航班信息（航司/班期/档位）。选择单日后重新查询即可看到实时价格与经停。
                 </span>
               }
             />
@@ -1886,7 +2422,7 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
 
       <Modal
         open={batchOpen}
-        title="批量转为监控任务"
+        title={batchMode === 'single' ? '转为监控任务' : '批量转为监控任务'}
         width={680}
         okText="确认创建"
         okButtonProps={{ loading: batchBusy }}
@@ -1894,14 +2430,29 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
         onCancel={() => setBatchOpen(false)}
         onOk={confirmBatch}
       >
-        <Alert
-          style={{ marginBottom: 12 }}
-          type="info"
-          showIcon
-          message="每个航班（航班号 + 起降时刻不同）分别创建独立任务，不合并；同一航班多个日期合入同一条任务。当前统一监控 199 元优惠价档位。"
-        />
-        <Row gutter={12} style={{ marginBottom: 12 }}>
-          <Col span={10}>
+        <Row gutter={8} style={{ marginBottom: 12 }}>
+          <Col span={8}>
+            <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>档位条件 · 多选（空=不限）</div>
+            <Select
+              mode="multiple"
+              style={{ width: '100%' }}
+              placeholder="不限（全部档位）"
+              value={batchTier}
+              onChange={(v) => {
+                setBatchTier(v)
+                // 档位条件变化：日期选项按档位×日期规则实时收窄（666 档节假日不可用等），
+                // 并剔除已被规则禁用的已选日期；空=不限→按航线产品档位计算（同打开时）
+                setBatchGroups((prev) => prev.map((g) => {
+                  const eff = v.length ? v : String(g.product || '').split('/').map((s) => s.trim()).filter(Boolean)
+                  const dates = filterTierDates(expandRecordDates(g.rows), eff.join('/'), tierBlockRules)
+                  return { ...g, dates, selected: (g.selected || []).filter((d) => dates.includes(d)) }
+                }))
+              }}
+              options={TIER_OPTIONS}
+              maxTagCount="responsive"
+            />
+          </Col>
+          <Col span={7}>
             <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>余票条件 · 至少 N 张才提醒</div>
             <Select
               style={{ width: '100%' }}
@@ -1916,12 +2467,12 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
               ]}
             />
           </Col>
-          <Col span={14}>
+          <Col span={9}>
             <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>舱位白名单（多选/手输，空=不限舱位）</div>
             <Select
               mode="tags"
               style={{ width: '100%' }}
-              placeholder="如 B、C、Z、R…，选中任一舱位有余票即提醒"
+              placeholder="如 B、C、Z、R…"
               value={batchCabins}
               onChange={setBatchCabins}
               options={CABIN_OPTIONS.map((c) => ({ value: c, label: c }))}
@@ -1936,17 +2487,19 @@ function FlightQuery({ msg, onChanged, priceQuery }) {
             size="small"
             style={{ marginBottom: 12 }}
             title={
-              <Space size={6}>
-                <span className="mono" style={{ fontWeight: 600 }}>{g.flight_no || '—'}</span>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>{g.dep_time || '--:--'} → {g.arr_time || '--:--'}</Typography.Text>
-                <ChevronRightIcon size={11} style={{ color: '#bfbfbf' }} />
-                {cityWithProvince(g.from_city)}（{g.from_iata}）<ChevronRightIcon size={11} style={{ color: '#bfbfbf' }} />{cityWithProvince(g.to_city)}（{g.to_iata}）
-              </Space>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', minWidth: 0, overflow: 'hidden' }}>
+                <span className="mono" style={{ fontWeight: 600, fontSize: 12, flexShrink: 0 }}>{g.flight_no || '—'}</span>
+                <Typography.Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>{g.dep_time || '--:--'} → {g.arr_time || '--:--'}</Typography.Text>
+                <ChevronRightIcon size={9} style={{ color: '#bfbfbf', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{cityWithProvince(g.from_city)}（{g.from_iata}）</span>
+                <ChevronRightIcon size={9} style={{ color: '#bfbfbf', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{cityWithProvince(g.to_city)}（{g.to_iata}）</span>
+              </div>
             }
             extra={<Tag color={g.product.includes('2666') ? 'purple' : 'gold'}>{g.product}</Tag>}
           >
             <div className="muted" style={{ marginBottom: 6, fontSize: 12 }}>
-              勾选航班可飞日期共 {g.dates.length} 天，请选择要监控的日期（可多选）：
+              共有 {g.dates.length} 天可选，请勾选要监控的日期（可多选）：
             </div>
             <Select
               mode="multiple"
@@ -2047,6 +2600,15 @@ export default function App() {
   const { message } = AntApp.useApp()
   const [tab, setTab] = useState('overview')
   const [historyAuto, setHistoryAuto] = useState(false)
+  // 档位×日期屏蔽规则：事实源为底表 data/sediment/tier_block_rules.json（经 meta 下发），
+  // 拉取前用 DEFAULT_TIER_BLOCK_RULES（镜像同一份规则）兜底
+  const [tierBlockRules, setTierBlockRules] = useState(DEFAULT_TIER_BLOCK_RULES)
+  useEffect(() => {
+    api.flightMeta()
+      .then((r) => { if (r && r.tier_block_rules) setTierBlockRules(normalizeTierRules(r.tier_block_rules)) })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const { data, loading, error, refresh } = usePolling(
     api.state,
     tab === 'history' ? (historyAuto ? 15000 : 30000) : 15000,
@@ -2120,16 +2682,17 @@ export default function App() {
         {/* 所有 tab 常驻挂载、display 切换，避免切 tab 丢失组件内状态（查询结果/表单/勾选等） */}
         <div className="page">
           <div style={{ display: tab === 'overview' ? 'block' : 'none' }}>
-            <Overview data={data} onGo={setTab} onToggleStatus={toggleStatus} />
+            <Overview data={data} onGo={setTab} onToggleStatus={toggleStatus} onChanged={refresh} msg={msg} />
           </div>
           <div style={{ display: tab === 'tasks' ? 'block' : 'none' }}>
-            <Tasks data={data} onChanged={refresh} msg={msg} onGo={setTab} />
+            <Tasks data={data} onChanged={refresh} msg={msg} onGo={setTab} tierBlockRules={tierBlockRules} />
           </div>
           <div style={{ display: tab === 'flights' ? 'block' : 'none' }}>
             <FlightQuery
               msg={msg}
               priceQuery={data?.config?.price_query}
               onChanged={refresh}
+              tierBlockRules={tierBlockRules}
             />
           </div>
           <div style={{ display: tab === 'notify' ? 'block' : 'none' }}>

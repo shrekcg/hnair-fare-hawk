@@ -46,7 +46,10 @@ DEFAULT_CONFIG = {
     # min_interval 为全局查询最小间隔（秒），防手动连点触发风控。
     "price_query": {"enabled": True, "min_interval": 8},
     # 通知渠道：飞书（企业自建应用机器人）。app_secret 仅在保存时写入，任何接口不回传。
-    "feishu": {"app_id": "", "app_secret": "", "receiver": ""},
+    # enabled=渠道开关（默认开，配置完整才有效）；urgent_enabled=该渠道加急开关（默认开）。
+    "feishu": {"app_id": "", "app_secret": "", "receiver": "", "enabled": True, "urgent_enabled": True},
+    # 微信公众号（Server酱「方糖」服务号）：enabled=推送开关（默认开，配置 SendKey 后生效）
+    "wechat": {"enabled": True},
     # 多通道通知：urgent_enabled=全局加急开关（默认开）；各渠道凭证为空即未启用
     "notify_channels": {
         "urgent_enabled": True,
@@ -275,6 +278,53 @@ def _task_key(from_code: str, to_code: str, flight_no: Any, dep_time: Any, arr_t
     ])
 
 
+def _norm_tier(value: Any) -> str:
+    """规范化档位条件：'666'/'2666'/'66666'/'all'；无法识别返回 'all'（不限）。"""
+    v = str(value or "").strip()
+    return v if v in ("666", "2666", "66666", "all") else "all"
+
+
+def _norm_dates(dates: Any) -> List[str]:
+    """规范化监控日期列表：仅保留 YYYY-MM-DD、去重排序。"""
+    out: List[str] = []
+    for d in (dates or []):
+        s = str(d).strip()
+        try:
+            datetime.strptime(s, "%Y-%m-%d")
+            out.append(s)
+        except ValueError:
+            continue
+    return sorted(set(out))
+
+
+def _norm_tiers(value: Any) -> List[str]:
+    """规范化档位条件多选列表（白名单）：仅保留 666/2666/66666；空=不限。
+
+    兼容旧单值 tier（字符串直接当数组用）；排序按数字升序便于展示。
+    """
+    if isinstance(value, (list, tuple, set)):
+        raw = [str(v).strip() for v in value]
+    else:
+        raw = [str(value or "").strip()]
+    out: List[str] = []
+    for v in raw:
+        if v in ("666", "2666", "66666") and v not in out:
+            out.append(v)
+    return sorted(out, key=lambda x: int(x))
+
+
+def _task_tiers(task: Dict[str, Any]) -> List[str]:
+    """读取任务的档位条件（多选白名单）：优先 tiers 列表，旧任务回退单值 tier。
+
+    返回空列表表示不限（空=全部档位）。
+    """
+    ts = task.get("tiers")
+    if isinstance(ts, (list, tuple)):
+        return _norm_tiers(ts)
+    single = _norm_tier(task.get("tier"))
+    return [single] if single in ("666", "2666", "66666") else []
+
+
 def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
     """从「航线查询」批量创建监控任务（当前只监控 199 元优惠价档）。
 
@@ -288,17 +338,6 @@ def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     返回 {"created": 新建条数, "merged": 合并条数}。
     """
-    def _norm_dates(dates: Any) -> List[str]:
-        out: List[str] = []
-        for d in (dates or []):
-            s = str(d).strip()
-            try:
-                datetime.strptime(s, "%Y-%m-%d")
-                out.append(s)
-            except ValueError:
-                continue
-        return sorted(set(out))
-
     created = 0
     merged = 0
     tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
@@ -316,6 +355,9 @@ def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not from_code or not to_code or not dates:
             continue
         product = str(item.get("product", "") or "").strip()
+        # 旧单值 tier 兼容：新弹窗已改为多选白名单 tiers（空=不限），旧客户端只发单值
+        tier = _norm_tier(item.get("tier"))
+        tiers = _norm_tiers(item.get("tiers", item.get("tier")))
         # 余票/舱位监控条件：min_seats（至少 N 张）+ cabins 舱位白名单
         min_seats = item.get("min_seats")
         cabins = item.get("cabins")
@@ -346,6 +388,14 @@ def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
             old_p = {p for p in str(t.get("product", "") or "").split("/") if p}
             new_p = {p for p in product.split("/") if p}
             t["product"] = "/".join(sorted(old_p | new_p))
+            # 档位条件：合并取并集；任一为「不限/空」时保持不限（防漏报，与旧语义一致）
+            existing_tiers = _task_tiers(t)
+            if not tiers or not existing_tiers:
+                merged_tiers: List[str] = []
+            else:
+                merged_tiers = sorted(set(existing_tiers) | set(tiers), key=lambda x: int(x))
+            t["tiers"] = merged_tiers
+            t["tier"] = "all" if not merged_tiers else merged_tiers[0]
             for k in ("flight_no", "dep_time", "arr_time"):
                 if not t.get(k) and snapshot.get(k):
                     t[k] = snapshot[k]
@@ -368,6 +418,8 @@ def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
                 "fare_type": "plus",
                 "enabled": True,
                 "product": product,
+                "tier": "all" if not tiers else tiers[0],
+                "tiers": tiers,
                 "created_at": datetime.now().isoformat(timespec="seconds"),
             }
             for k in ("flight_no", "dep_time", "arr_time"):
@@ -385,6 +437,62 @@ def add_tasks_batch(items: List[Dict[str, Any]]) -> Dict[str, Any]:
     tasks["tasks"] = existing
     _write_json(TASKS_PATH, tasks)
     return {"created": created, "merged": merged}
+
+
+def update_tasks(task_ids: List[str], fields: Dict[str, Any]) -> int:
+    """按 id 列表更新任务（前端编辑弹窗；分组行一次更新组内全部任务）。
+
+    可改字段：from_code/to_code/dates/flight_no/dep_time/arr_time/
+    tiers（多选白名单，空=不限）/min_seats/cabins。
+    保留：id/enabled/target_price/fare_type/created_at。
+    返回受影响条数。
+    """
+    ids = {str(i).strip() for i in task_ids if str(i).strip()}
+    if not ids:
+        return 0
+    tasks = _read_json(TASKS_PATH, DEFAULT_TASKS)
+    touched = 0
+    for task in tasks.get("tasks", []):
+        if str(task.get("id", "")).strip() not in ids:
+            continue
+        old_from = str(task.get("from_code", "") or "").strip().upper()
+        old_to = str(task.get("to_code", "") or "").strip().upper()
+        old_flight = str(task.get("flight_no", "") or "").strip().upper()
+        from_code = str(fields.get("from_code", "") or "").strip().upper()
+        to_code = str(fields.get("to_code", "") or "").strip().upper()
+        if from_code:
+            task["from_code"] = from_code
+        if to_code:
+            task["to_code"] = to_code
+        for k in ("flight_no", "dep_time", "arr_time"):
+            if k in fields:
+                task[k] = str(fields.get(k) or "").strip()
+        # 航线/航班变化后旧经停快照不再可信，清除（列表会从观测/底表重新补充）
+        new_flight = str(task.get("flight_no", "") or "").strip().upper()
+        if from_code != old_from or to_code != old_to or new_flight != old_flight:
+            task.pop("stop", None)
+        dates = fields.get("dates")
+        if isinstance(dates, list):
+            norm_dates = _norm_dates(dates)
+            if norm_dates:
+                task["dates"] = norm_dates
+                task["date"] = norm_dates[0]
+                task["date_end"] = norm_dates[-1]
+        if "tiers" in fields:
+            new_tiers = _norm_tiers(fields.get("tiers"))
+            task["tiers"] = new_tiers
+            task["tier"] = "all" if not new_tiers else new_tiers[0]
+        if "min_seats" in fields:
+            try:
+                task["min_seats"] = max(1, int(fields.get("min_seats") or 1))
+            except (TypeError, ValueError):
+                task["min_seats"] = 1
+        if "cabins" in fields:
+            task["cabins"] = _norm_cabins(fields.get("cabins"))
+        touched += 1
+    if touched:
+        _write_json(TASKS_PATH, tasks)
+    return touched
 
 
 def save_proxy(proxy: str) -> None:
@@ -406,6 +514,36 @@ def save_price_query(enabled: bool, min_interval: int) -> None:
     except (TypeError, ValueError):
         interval = DEFAULT_CONFIG["price_query"]["min_interval"]
     pq["min_interval"] = interval
+    _write_json(CONFIG_PATH, config)
+
+
+def save_polling(day_min_sec=None, day_max_sec=None, night_min_sec=None, night_max_sec=None) -> None:
+    """保存监控频率（daemon 每轮查询的随机间隔范围，秒）。
+
+    与「实时查价」区分：实时查价=手动查航线价格的最小间隔；
+    监控频率=daemon 后台模拟查询的轮询节奏。四个值分别钳制在 10~3600 秒，
+    且同档 min 不超过 max（若用户填反则交换）。
+    """
+    config = load_config()
+    poll = config.setdefault("polling", dict(DEFAULT_CONFIG["polling"]))
+    if not isinstance(poll, dict):
+        poll = dict(DEFAULT_CONFIG["polling"])
+        config["polling"] = poll
+
+    def norm(value, default):
+        try:
+            return max(10, min(3600, int(value)))
+        except (TypeError, ValueError):
+            return default
+
+    poll["day_min_sec"] = norm(day_min_sec, poll.get("day_min_sec", DEFAULT_CONFIG["polling"]["day_min_sec"]))
+    poll["day_max_sec"] = norm(day_max_sec, poll.get("day_max_sec", DEFAULT_CONFIG["polling"]["day_max_sec"]))
+    poll["night_min_sec"] = norm(night_min_sec, poll.get("night_min_sec", DEFAULT_CONFIG["polling"]["night_min_sec"]))
+    poll["night_max_sec"] = norm(night_max_sec, poll.get("night_max_sec", DEFAULT_CONFIG["polling"]["night_max_sec"]))
+    if poll["day_min_sec"] > poll["day_max_sec"]:
+        poll["day_min_sec"], poll["day_max_sec"] = poll["day_max_sec"], poll["day_min_sec"]
+    if poll["night_min_sec"] > poll["night_max_sec"]:
+        poll["night_min_sec"], poll["night_max_sec"] = poll["night_max_sec"], poll["night_min_sec"]
     _write_json(CONFIG_PATH, config)
 
 
@@ -441,6 +579,22 @@ def save_notify_channels(raw: Dict[str, Any]) -> None:
 
     # 加急开关已从界面移除：重要/阻断告警默认加急，保存时固定开启
     nc["urgent_enabled"] = True
+
+    # 微信（Server酱「方糖」）与飞书渠道的开关：配置不在 notify_channels，
+    # 但前端统一走 /api/notify/save 保存（开关切换只带 enabled/urgent_enabled）
+    incoming_all = raw.get("wechat")
+    if isinstance(incoming_all, dict) and "enabled" in incoming_all:
+        wc = config.setdefault("wechat", dict(DEFAULT_CONFIG["wechat"]))
+        if isinstance(wc, dict):
+            wc["enabled"] = bool(incoming_all.get("enabled", True))
+    incoming_fs = raw.get("feishu")
+    if isinstance(incoming_fs, dict):
+        fs = config.setdefault("feishu", dict(DEFAULT_CONFIG["feishu"]))
+        if isinstance(fs, dict):
+            if "enabled" in incoming_fs:
+                fs["enabled"] = bool(incoming_fs.get("enabled", True))
+            if "urgent_enabled" in incoming_fs:
+                fs["urgent_enabled"] = bool(incoming_fs.get("urgent_enabled", True))
 
     field_rules = {
         "wecom": ("corp_id", "agent_id", "user_id", "secret"),
@@ -558,6 +712,11 @@ def _archive_and_reset(path: Path) -> int:
 def clear_price_history() -> int:
     """清除价格历史（页面显示清零，旧数据归档为 price_history.jsonl.bak）。"""
     return _archive_and_reset(HISTORY_PATH)
+
+
+def clear_notify_history() -> int:
+    """清除通知历史（页面显示清零，旧数据归档为 notification_history.jsonl.bak）。"""
+    return _archive_and_reset(NOTIFY_HISTORY_PATH)
 
 
 def clear_run_log() -> int:

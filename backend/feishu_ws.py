@@ -19,6 +19,7 @@ import json
 import os
 import threading
 import time
+from collections import deque
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -231,6 +232,22 @@ def _now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
+# 事件排重：最近处理过的 (message_id, value) 与时间戳。同一事件的双通道投递/
+# 超时重推在 30 秒窗口内去重；用户再次点击同一按钮（新 action_value）不受影响。
+_DUP_WINDOW_SECONDS = 30
+_recent_events: deque = deque(maxlen=128)
+
+
+def _is_dup_event(message_id: str, action_value: Dict[str, Any]) -> bool:
+    key = (message_id, json.dumps(action_value, sort_keys=True, ensure_ascii=False))
+    now = time.time()
+    for k, ts in _recent_events:
+        if k == key and now - ts < _DUP_WINDOW_SECONDS:
+            return True
+    _recent_events.append((key, now))
+    return False
+
+
 def process_card_action(
     operator_open_id: str,
     message_id: str,
@@ -242,6 +259,11 @@ def process_card_action(
 
     返回给开放平台的响应（toast 等）。
     """
+    # 事件排重：同一事件可能被双通道（webhook+长连接）投递，或因处理超时被
+    # 开放平台重推。按钮 value 自带毫秒时间戳 action_value，同一次点击的重复
+    # 事件 value 完全相同；30 秒内相同 (message_id, value) 只处理一次。
+    if _is_dup_event(message_id, action_value or {}):
+        return {"toast": {"type": "info", "content": "重复事件，已忽略"}}
     path = state_path or STATE_PATH
     cfg = _load_feishu_cfg()
     action_value = action_value or {}
@@ -250,17 +272,13 @@ def process_card_action(
     confirm = str(action_value.get("confirm", "0") or "0")
     confirmed = confirm == "1"
 
-    # 1. 取出卡片原文，替换按钮为状态文本并回写
-    update_ok, update_error = False, ""
+    # 1. 取出卡片原文，替换按钮为状态文本
+    new_card = None
     data = _read_state()
     cards = data.get("cards") if isinstance(data.get("cards"), dict) else {}
     origin = cards.get(message_id)
     if origin and isinstance(origin.get("card"), dict) and cfg["app_id"] and cfg["app_secret"]:
         new_card = build_confirm_resolved_card(origin["card"], confirmed)
-        try:
-            update_ok, update_error = update_feishu_card(cfg["app_id"], cfg["app_secret"], message_id, new_card)
-        except Exception as exc:  # noqa: BLE001 网络/接口异常不影响回执落盘
-            update_error = f"更新卡片异常：{exc}"
 
     # 2. 记录回执（成功/失败都记录，供前端「通知」页展示）
     entry = {
@@ -271,8 +289,8 @@ def process_card_action(
         "action": action,
         "confirm": confirm,
         "confirmed": confirmed,
-        "card_updated": update_ok,
-        "error": (update_error or "")[:200],
+        "card_updated": new_card is not None,
+        "error": "" if new_card is not None else "未找到可更新的卡片原文",
         "token": token,
     }
     record_confirmation(entry, path)
@@ -282,9 +300,48 @@ def process_card_action(
     with _status_lock:
         _status["event_count"] = int(_status.get("event_count", 0)) + 1
 
-    if not update_ok:
-        return {"toast": {"type": "info", "content": "已记录反馈（卡片更新失败）"}}
-    return {"toast": {"type": "success", "content": "已确认 ✅" if confirmed else "已忽略"}}
+    if new_card is None:
+        return {"toast": {"type": "info", "content": "已记录反馈（未找到卡片原文）"}}
+
+    # 4. 回调响应直接携带新卡片（官方「立即更新」方式，3 秒内生效），
+    #    并在此之后异步 PATCH 兜底：文档要求更新必须在响应回调之后执行，
+    #    提前/并行执行会出现更新失败（表现为按钮闪一下又恢复）。
+    _patch_card_after_response(cfg, message_id, new_card, path, entry["ts"])
+    return {
+        "toast": {"type": "success", "content": "已确认 ✅" if confirmed else "已忽略"},
+        "card": {"type": "raw", "data": new_card},
+    }
+
+
+def _patch_card_after_response(
+    cfg: Dict[str, Any],
+    message_id: str,
+    new_card: Dict[str, Any],
+    state_path: str,
+    entry_ts: str,
+) -> None:
+    """回调响应发出后再 PATCH 更新卡片（兜底），并把真实结果写回该条回执。"""
+
+    def _run() -> None:
+        time.sleep(1.0)  # 确保回调响应帧已发出（ws/webhook 均在 handler 返回后发送）
+        try:
+            ok, err = update_feishu_card(cfg["app_id"], cfg["app_secret"], message_id, new_card)
+        except Exception as exc:  # noqa: BLE001 网络/接口异常不影响回执落盘
+            ok, err = False, f"更新卡片异常：{exc}"
+        try:
+            data = _read_state(state_path)
+            confirms = data.get("card_confirmations")
+            if isinstance(confirms, list):
+                for e in confirms:
+                    if e.get("message_id") == message_id and e.get("ts") == entry_ts:
+                        e["card_updated"] = ok
+                        e["error"] = (err or "")[:200]
+                data["card_confirmations"] = confirms
+                _write_state(data, state_path)
+        except Exception:
+            pass
+
+    threading.Thread(target=_run, name="feishu-card-patch-fallback", daemon=True).start()
 
 
 # ==================== 长连接服务线程 ====================

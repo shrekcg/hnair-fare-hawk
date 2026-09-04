@@ -1,13 +1,18 @@
 """666/2666 随心飞底表只读查询模块。
 
-数据源：data/sediment/flights_normalized.json（2026 秋航季，由 scripts/sedimentation/update.py
-重建，重建前存时点快照，版本见 data/sediment/versions.json）。
+数据源：
+- data/sediment/flights_normalized.json（2026 秋航季，由 scripts/sedimentation/update.py
+  重建，重建前存时点快照，版本见 data/sediment/versions.json）；
+- data/sediment/tier_block_rules.json（档位×日期屏蔽规则，单一事实源，经
+  meta() 下发前端日期选择；query() 按档位日期屏蔽返回空）。
 
 设计：
 - 只读，启动后懒加载一次（约 1.6MB），之后常驻内存；
 - 查询维度：出发/到达城市、产品档位（666/2666）、日期（班期 + 有效日期区间）、航班号；
 - 判断规则：product 必须按 "/" 切分后判成员（"666" in "2666" 是坑）；日期需落在
-  effective_dates 任一段且 days 含当天星期（周一=1 … 周日=7，isoweekday）。
+  effective_dates 任一段且 days 含当天星期（周一=1 … 周日=7，isoweekday）；
+- 档位×日期：666 屏蔽春运/五一/暑运/十一，2666 仅屏蔽春运/暑运（见 tier_block_rules.json）。
+  指定档位 + 日期/区间落在屏蔽区间内时 query() 直接返回空（业务上该档该日不可兑）。
 """
 
 from __future__ import annotations
@@ -19,9 +24,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 SEDIMENT_PATH = Path(__file__).resolve().parents[1] / "data" / "sediment" / "flights_normalized.json"
+TIER_BLOCK_RULES_PATH = Path(__file__).resolve().parents[1] / "data" / "sediment" / "tier_block_rules.json"
 
 _lock = threading.Lock()
 _cache: Optional[List[Dict[str, Any]]] = None
+_block_lock = threading.Lock()
+_block_cache: Optional[Dict[str, Any]] = None
 
 
 def load_records(path: str | Path | None = None, force: bool = False) -> List[Dict[str, Any]]:
@@ -41,6 +49,102 @@ def load_records(path: str | Path | None = None, force: bool = False) -> List[Di
 def day_to_weekday(d: date) -> int:
     """date -> 1(周一)..7(周日)。"""
     return d.isoweekday()
+
+
+def tier_block_rules(force: bool = False) -> Dict[str, Any]:
+    """档位×日期屏蔽规则（单一事实源：data/sediment/tier_block_rules.json）。
+
+    返回 {"source": ..., "notes": ..., "tiers": {档位: {"label": ..., "blocks": [[start, end], ...]}}}；
+    文件缺失或损坏时返回 {"tiers": {}}（不抛错，前端保留自身兜底规则）。
+    """
+    global _block_cache
+    if _block_cache is None or force:
+        with _block_lock:
+            if _block_cache is None or force:
+                try:
+                    _block_cache = json.loads(TIER_BLOCK_RULES_PATH.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    _block_cache = {"tiers": {}}
+    return _block_cache
+
+
+def tier_blocks(tier: str) -> List[List[str]]:
+    """某档位的屏蔽区间列表（闭区间，含首尾）；无规则返回空列表。"""
+    return list(tier_block_rules().get("tiers", {}).get(str(tier), {}).get("blocks") or [])
+
+
+def product_tiers(product: str | None) -> List[str]:
+    """product 拆成档位列表（"666/2666" -> ["666","2666"]；空 / "all" -> []）。"""
+    if not product or str(product) == "all":
+        return []
+    return [p for p in str(product).split("/") if p]
+
+
+def date_in_blocks(blocks: List[List[str]], date_str: str) -> bool:
+    """date_str 是否落在任一屏蔽区间内（闭区间）。"""
+    try:
+        date.fromisoformat(date_str)
+    except ValueError:
+        return False
+    return any(a <= date_str <= b for a, b in blocks)
+
+
+def range_fully_in_blocks(blocks: List[List[str]], date_start: str = "", date_end: str = "") -> bool:
+    """date_start..date_end 是否完全落在某一段屏蔽区间内（闭区间，含首尾）。
+
+    单边（只给 start 或 end）时按该点是否落在区间内判断；空区间返回 False。
+    """
+    if not date_start and not date_end:
+        return False
+    try:
+        d0 = date.fromisoformat(date_start) if date_start else None
+        d1 = date.fromisoformat(date_end) if date_end else None
+    except ValueError:
+        return False
+    if d0 and d1 and d0 > d1:
+        return True  # 非法区间：query 语义为不匹配，视为「被屏蔽」直接返回空
+    for a, b in blocks:
+        try:
+            sa, sb = date.fromisoformat(a), date.fromisoformat(b)
+        except ValueError:
+            continue
+        if d0 and d1:
+            if sa <= d0 and d1 <= sb:
+                return True
+        elif d0 and sa <= d0 <= sb:
+            return True
+        elif d1 and sa <= d1 <= sb:
+            return True
+    return False
+
+
+def blocked_by_tier(
+    product: str | None,
+    date_str: str = "",
+    date_start: str = "",
+    date_end: str = "",
+) -> bool:
+    """指定档位（可含多档）在给定日期/区间上是否被任一档位规则屏蔽。
+
+    - 单日：落在任一档位屏蔽区间内即 True；
+    - 区间：整个区间完全落在某一档位屏蔽区间内才 True（部分重叠保留原始语义，
+      由调用方/前端按具体日期收窄）；
+    - 未指定档位（None/all/空）不屏蔽。
+    """
+    tiers = product_tiers(product)
+    if not tiers:
+        return False
+    for t in tiers:
+        blocks = tier_blocks(t)
+        if not blocks:
+            continue
+        if date_str:
+            if date_in_blocks(blocks, date_str):
+                return True
+        elif date_start or date_end:
+            if range_fully_in_blocks(blocks, date_start, date_end):
+                return True
+    return False
 
 
 def matches_product(record: Dict[str, Any], product: str | None) -> bool:
@@ -139,6 +243,9 @@ def query(
     - direction：depart（仅出发）/ arrive（仅到达）/ both（默认，配合 city 使用）。
     """
     records = load_records()
+    # 档位×日期屏蔽：指定档位 + 日期/区间落在屏蔽区间内时，业务上该档该日不可兑，直接返回空
+    if blocked_by_tier(product, date_str=date_str, date_start=date_start, date_end=date_end):
+        return []
     out: List[Dict[str, Any]] = []
     for rec in records:
         o = rec.get("origin") or {}
@@ -266,5 +373,6 @@ def meta() -> Dict[str, Any]:
         "airports": airports,
         "product_dist": product_dist,
         "source_dist": source_dist,
+        "tier_block_rules": tier_block_rules(),
         "generated_at": f"{date.today().isoformat()}",
     }

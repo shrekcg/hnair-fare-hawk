@@ -185,9 +185,8 @@ def test_feishu_save_and_mask(api_server):
     feishu = state["config"]["feishu"]
     assert feishu["configured"] is True
     assert feishu["has_secret"] is True
-    # AppID 掩码，不完整回显
-    assert feishu["app_id"] != "cli_a1b2c3d4"
-    assert "****" in feishu["app_id"]
+    # AppID 供前端 hover 展示（非机密）；AppSecret 永不回传
+    assert feishu["app_id"] == "cli_a1b2c3d4"
     # receiver 不敏感可展示
     assert feishu["receiver"] == "me@example.com"
 
@@ -424,3 +423,64 @@ def test_tasks_enabled_ids(api_server):
     r = requests.post(f"{base}/api/tasks/enabled", json={"ids": row["ids"], "enabled": True}, timeout=5)
     state = requests.get(f"{base}/api/state", timeout=5).json()
     assert state["tasks"][0]["enabled"] is True
+
+
+def test_polling_save_and_clamp(api_server):
+    """监控频率保存：normal 值原样保存，越界值钳制、min>max 自动交换。"""
+    base, tmp = api_server
+    r = requests.post(f"{base}/api/polling", json={
+        "day_min_sec": 120,
+        "day_max_sec": 300,
+        "night_min_sec": 480,
+        "night_max_sec": 720,
+    }, timeout=5)
+    assert r.status_code == 200
+    assert r.json()["ok"] is True
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    assert state["config"]["polling"] == {"day_min_sec": 120, "day_max_sec": 300, "night_min_sec": 480, "night_max_sec": 720}
+
+    # 越界钳制 + min>max 交换
+    r = requests.post(f"{base}/api/polling", json={
+        "day_min_sec": 999999,
+        "day_max_sec": 5,
+        "night_min_sec": -3,
+        "night_max_sec": 30,
+    }, timeout=5)
+    assert r.json()["ok"] is True
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    poll = state["config"]["polling"]
+    assert poll["day_min_sec"] == 10 and poll["day_max_sec"] == 3600  # 999999→3600、5→10，交换后 min<max
+    assert poll["night_min_sec"] == 10 and poll["night_max_sec"] == 30
+
+
+def test_history_records_expose_extra_fields(api_server):
+    """history 透传档位/起降时刻/余票字段（旧记录缺失时前端可防空）。"""
+    base, tmp = api_server
+    # 手动写入两条历史：一条含新字段，一条只有旧字段
+    (tmp / "price_history.jsonl").write_text(
+        "\n".join([
+            json.dumps({
+                "ts": "2026-09-04T10:00:00", "task_id": "t1", "date": "2026-09-20",
+                "from": "SZX", "to": "HGH", "fare_type": "plus", "flight": "HU1234",
+                "price": 199, "tiers": [666, 2666], "dep_time": "08:00", "arr_time": "10:00", "seats": 5,
+            }),
+            json.dumps({
+                "ts": "2026-09-03T10:00:00", "task_id": "t2", "date": "2026-09-21",
+                "from": "SZX", "to": "PVG", "fare_type": "normal", "flight": "HU5678",
+                "price": 350,
+            }),
+        ]) + "\n",
+        encoding="utf-8",
+    )
+    state = requests.get(f"{base}/api/state", timeout=5).json()
+    rows = {r["flight"]: r for r in state["history"]}
+    new_row = rows["HU1234"]
+    assert new_row["tiers"] == [666, 2666]
+    assert new_row["dep_time"] == "08:00" and new_row["arr_time"] == "10:00"
+    assert new_row["seats"] == 5
+    assert new_row["task_id"] == "t1"
+    old_row = rows["HU5678"]
+    assert old_row["tiers"] == []
+    assert old_row["dep_time"] == "" and old_row["arr_time"] == ""
+    assert old_row["seats"] is None
+    assert old_row["task_id"] == "t2"

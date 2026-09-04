@@ -28,6 +28,8 @@ export const api = {
   setTaskEnabled: (ids, enabled) =>
     request('/api/tasks/enabled', { method: 'POST', body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [ids], enabled }) }),
   deleteTask: (ids) => request('/api/tasks/delete', { method: 'POST', body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [ids] }) }),
+  updateTasks: (ids, payload) =>
+    request('/api/tasks/update', { method: 'POST', body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [ids], ...payload }) }),
   saveSendKeys: (raw) => request('/api/send_keys', { method: 'POST', body: JSON.stringify({ raw }) }),
   testAlert: (keys) => request('/api/test_alert', { method: 'POST', body: JSON.stringify({ keys }) }),
   saveMonitorWindow: (start, end) =>
@@ -37,6 +39,8 @@ export const api = {
     request('/api/sign_refresh', { method: 'POST', body: JSON.stringify({ enabled }) }),
   savePriceQuery: (enabled, minInterval) =>
     request('/api/price_query', { method: 'POST', body: JSON.stringify({ enabled, min_interval: minInterval }) }),
+  savePolling: (polling) =>
+    request('/api/polling', { method: 'POST', body: JSON.stringify(polling) }),
   saveTicket: (fareType, raw) =>
     request('/api/ticket', { method: 'POST', body: JSON.stringify({ fare_type: fareType, raw }) }),
   saveFeishu: (payload) => request('/api/feishu', { method: 'POST', body: JSON.stringify(payload) }),
@@ -44,6 +48,8 @@ export const api = {
   saveNotifyChannels: (payload) => request('/api/notify/save', { method: 'POST', body: JSON.stringify(payload) }),
   testNotifyChannel: (channel) => request('/api/notify/test', { method: 'POST', body: JSON.stringify({ channel }) }),
   clearLog: () => request('/api/log/clear', { method: 'POST', body: JSON.stringify({}) }),
+  clearNotifyHistory: () => request('/api/notify_history/clear', { method: 'POST', body: JSON.stringify({}) }),
+  clearPriceHistory: () => request('/api/price_history/clear', { method: 'POST', body: JSON.stringify({}) }),
   flightMeta: () => request('/api/flights/meta'),
   flightOptions: (params) => {
     const qs = new URLSearchParams(

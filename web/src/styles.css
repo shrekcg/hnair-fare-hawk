@@ -100,10 +100,11 @@ body {
 .channel-result .ant-alert {
   width: 100%;
   font-size: 12px;
-  padding: 4px 10px;
+  padding: 2px 8px;
 }
-.channel-result .ant-alert-message { font-size: 12px; line-height: 1.5; }
-.channel-result .ant-alert-action { margin-inline-start: 8px; }
+.channel-result .ant-alert-message { font-size: 12px; line-height: 1.4; }
+.channel-result .ant-alert-action { margin-inline-start: 6px; }
+.channel-result .ant-alert-action .ant-btn { font-size: 12px; padding: 0 4px; height: auto; }
 
 /* ---------- 历史高亮 ---------- */
 .hit-row td { background: #fff1f0 !important; }
