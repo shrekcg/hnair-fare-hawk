@@ -316,6 +316,8 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
 /* ================= 任务 ================= */
 function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
   const tasks = data.tasks || []
+  // 「只能查/显示当天及以后」：过去日期从所有可选池剔除（编辑弹窗日期选项、档位联动、兜底池）
+  const todayStr = dayjs().format('YYYY-MM-DD')
 
   const toggleEnabled = async (t, enabled) => {
     try {
@@ -449,7 +451,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
 
   // 编辑弹窗日期选项：正常为该航线可飞日期；拉取失败时回退为原任务日期（保证可保存）
   const dateOptions = (() => {
-    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules)
+    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules).filter((d) => d >= todayStr)
     return [...new Set(pool)].sort().map((d) => ({ value: d, label: d }))
   })()
 
@@ -457,7 +459,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
   useEffect(() => {
     if (!editRow) return
     const cur = (editForm.getFieldValue('dates') || []).map((d) => String(d).trim()).filter(Boolean)
-    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules)
+    const pool = filterTierDates(dateOpts.length ? dateOpts : (editRow?.dates || []), editEffTiers.join('/'), tierBlockRules).filter((d) => d >= todayStr)
     const allowed = new Set(pool)
     const kept = cur.filter((d) => allowed.has(d))
     if (kept.length !== cur.length) editForm.setFieldsValue({ dates: kept })
@@ -633,7 +635,6 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
         title={`监控任务（${tasks.length}）`}
         extra={
           <Space>
-            <Typography.Text type="secondary">15 秒自动刷新 · 同一航班多个监控日期已合并；不同航班分别成条</Typography.Text>
             <Button type="primary" ghost icon={<CompassIcon />} onClick={() => onGo('flights')}>去航线查询添加</Button>
           </Space>
         }
@@ -1784,6 +1785,7 @@ function ScheduleCalendar({ rec }) {
   const ranges = rec.effective_dates || []
   const days = rec.days || []
   const now = dayjs()
+  const todayStr = now.format('YYYY-MM-DD') // 过期判定：只允许查看当天及以后
   const startMonth = now.startOf('month')
   const winStart = ranges.length ? dayjs(ranges[0][0]).startOf('month') : startMonth
   const winEndRaw = ranges.length
@@ -1828,6 +1830,7 @@ function ScheduleCalendar({ rec }) {
 
   const statusOf = (d) => {
     const ds = d.format('YYYY-MM-DD')
+    if (ds < todayStr) return 'past' // 已过期：只允许查看当天及以后
     const inRange = ranges.some(([a, b]) => ds >= a && ds <= b)
     if (!inRange) return 'off' // 未放票
     // dayjs 核心无 isoWeekday 插件：day() 周日=0 … 周六=6，换算为 周一=1 … 周日=7
@@ -1842,7 +1845,7 @@ function ScheduleCalendar({ rec }) {
   for (let d = 1; d <= view.daysInMonth(); d++) cells.push(first.date(d))
   while (cells.length % 7 !== 0) cells.push(null)
 
-  const statusText = { ok: '可兑换（班期+放票区间匹配）', no: '不可兑换（班期不符）', off: '未放票' }
+  const statusText = { past: '已过期（仅可查看当天及以后）', ok: '可兑换（班期+放票区间匹配）', no: '不可兑换（班期不符）', off: '未放票' }
 
   return (
     <div>
@@ -1890,6 +1893,7 @@ function ScheduleCalendar({ rec }) {
           <span><i className="cal-dot cal-dot-ok" />可兑换</span>
           <span><i className="cal-dot cal-dot-no" />班期不符</span>
           <span><i className="cal-dot cal-dot-off" />未放票</span>
+          <span><i className="cal-dot cal-dot-past" />已过期</span>
           <span className="cal-swipe-hint">左右/上下滑动切换月份</span>
         </div>
       </div>
@@ -1928,6 +1932,9 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
 
   const watch = Form.useWatch([], form)
   const dateMode = (watch && watch.dateMode) || 'none'
+  // 「只能查/显示当天及以后」：日期选择器禁过去；转监控弹窗的日期池同样剔除过去日期
+  const todayStr = dayjs().format('YYYY-MM-DD')
+  const todayDisabled = (d) => d.isBefore(dayjs(), 'day')
 
   // 联动选项：watch 筛选条件（含日期模式），debounce 250ms 调 /api/flights/options
   useEffect(() => {
@@ -2076,7 +2083,7 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
       g.product = [...g.product].sort().join('/')
       // 只保留班期日历里可兑换的日期（区间 + 班期匹配，与 ScheduleCalendar 判定一致），
       // 并按档位剔除产品规则禁用的日期（tier_block_rules，如 666 档十一/五一/暑运不可用）
-      g.dates = filterTierDates(expandRecordDates(g.rows), g.product, tierBlockRules)
+      g.dates = filterTierDates(expandRecordDates(g.rows), g.product, tierBlockRules).filter((d) => d >= todayStr)
       // prefill 搜索日期：单日选该日，区间选区间内的可飞日期
       if (searchRange) {
         const [a, b] = searchRange
@@ -2339,9 +2346,9 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
                   {dateMode !== 'none' && (
                     <Form.Item name={dateMode === 'single' ? 'date' : 'dateRange'} noStyle>
                       {dateMode === 'single' ? (
-                        <DatePicker style={{ width: 200, flex: 1 }} placeholder="选择单日" />
+                        <DatePicker style={{ width: 200, flex: 1 }} placeholder="选择单日" disabledDate={todayDisabled} />
                       ) : (
-                        <DatePicker.RangePicker style={{ width: 260, flex: 1 }} />
+                        <DatePicker.RangePicker style={{ width: 260, flex: 1 }} disabledDate={todayDisabled} />
                       )}
                     </Form.Item>
                   )}
@@ -2356,7 +2363,6 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
                     { label: '全部', value: 'all' },
                     { label: '666', value: '666' },
                     { label: '2666', value: '2666' },
-                    { label: '3666', value: '3666' },
                   ]}
                 />
               </Form.Item>
@@ -2444,7 +2450,7 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
                 // 并剔除已被规则禁用的已选日期；空=不限→按航线产品档位计算（同打开时）
                 setBatchGroups((prev) => prev.map((g) => {
                   const eff = v.length ? v : String(g.product || '').split('/').map((s) => s.trim()).filter(Boolean)
-                  const dates = filterTierDates(expandRecordDates(g.rows), eff.join('/'), tierBlockRules)
+                  const dates = filterTierDates(expandRecordDates(g.rows), eff.join('/'), tierBlockRules).filter((d) => d >= todayStr)
                   return { ...g, dates, selected: (g.selected || []).filter((d) => dates.includes(d)) }
                 }))
               }}

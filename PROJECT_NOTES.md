@@ -104,7 +104,7 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
 - [x] **第三方校正管线（2026-09-03）**：`backend/third_party.py` + `scripts/sedimentation/sync_third_party.py`（--preview/--apply + 快照）+ `tests/test_third_party.py`；只校正 dep/arr_time、terminal、stops；已调研渠道结论见下方「第三方渠道调研」
 - [x] **免费全量自扫脚本（2026-09-03，两轮迭代完成并验证）**：`scripts/sedimentation/sync_from_price_api.py` 用官方查价接口按「航线+日期」整批免费扫表；默认 60s 保守间隔（拒绝 <10s）；失败任务（network/parse/error）**不标记 done**，进入 failed 集合后续轮自动重试；每条任务完成立即落盘；`--supervised` 无人值守（一轮跑完等待 60s 自动下一轮，连续 3 轮零进展通知并退出防凭证过期空转）；`--max-fail` 单轮连续失败暂停阈值（默认 6）；完成/暂停/中断三路径都会推微信+飞书通知（--no-notify 关闭）。底表 1733 条 → 1298 个查询任务；进度文件 `data/sediment/sync_from_price_api_progress.json` 结构 `{done, failed, total, updated_at}`；实测 normal 档覆盖最全（plus 只含会员价会 miss）；当前已完成 5 个任务，观测库 7 条（验证：133 测试通过 + dry-run + 真实 limit 1 成功写入观测）
 - [x] **文档清理（2026-09-03）**：删除过时交接/历史文档（START_HERE、CHANGES_AND_USAGE、REVISION_NOTES、docs/QUICK_START_WITH_AI、WECHAT_NOTIFICATION_SETUP、ui_design_spec、消息通知渠道调研、docs/images、docs/feishu_notify_guide.md、ddg_auth.html、*.bak）；通知配置统一收拢到 `docs/notify_channels_guide.md`；README 重写为 React 现状；本文件同步目录与进度
-- [x] **多通道通知 + 飞书闭环（2026-09-03）**：`backend/channels.py` 统一企业微信/钉钉/Bark/ntfy/飞书 + 加急路由（important 加急默认开，critical 强制全渠道并写 `notification_history.jsonl`）；`backend/feishu_ws.py` 飞书长连接事件接收（lark-oapi ws.Client，卡片回调确认闭环，状态机记录卡片/确认到 runtime_state.json）；前端「通知设置」重构为渠道卡片 + 全局加急开关 + 飞书配置/长连接状态/测试/确认卡片 + 通知历史 + 飞书回执表；API：`/api/notify/save`、`/api/notify/test`、`/api/feishu/callback`。真实自测：飞书卡片发送成功、模拟回调后卡片更新、长连接真实连上；**遗留**：加急权限 `im:message.urgent`（或 `im:message.urgent:app_send`）需在开放平台开通并发布版本，否则加急失败 code=99991672（消息可发、不阻断）
+- [x] **多通道通知 + 飞书闭环（2026-09-03）**：`backend/channels.py` 统一企业微信/钉钉/Bark/ntfy/飞书 + 加急路由（important 加急默认开，critical 强制全渠道并写 `notification_history.jsonl`）；`backend/feishu_ws.py` 飞书长连接事件接收（lark-oapi ws.Client，卡片回调确认闭环，状态机记录卡片/确认到 runtime_state.json）；前端「通知设置」重构为渠道卡片 + 全局加急开关 + 飞书配置/长连接状态/测试/确认卡片 + 通知历史 + 飞书回执表；API：`/api/notify/save`、`/api/notify/test`、`/api/feishu/callback`。真实自测：飞书卡片发送成功、模拟回调后卡片更新、长连接真实连上；**遗留（已解决 2026-09-04）**：加急权限 `im:message.urgent` 已由用户在开放平台开通并发布版本，加急现可正常发送（此前失败 code=99991672 消息可发、不阻断）
 - [x] **余票/舱位监控（2026-09-03）**：fetcher `_extract_seat_info` 按 bookingClass 去重取最大 qty（status "A"→qty>=10）；任务转监控/新增支持 `min_seats`（至少 N 张才触发，默认 1=旧行为）与 `cabins` 舱位白名单；daemon `_task_seat_ok` 按白名单舱位 qty 和或总余票判断；「实时查询」返回 `seats:{normal:{}, plus:{}}`；前端余票/舱位列（plus 优先）、批转弹窗「至少 N 张」+舱位白名单、任务表「余票条件」列；测试 169 通过
 - [x] **第 6 轮迭代 + UI 对齐（2026-09-03 深夜，测试 170）**：
   - 批转任务合并语义改「**航线+航班号+起降时刻**」分组——同日多个起飞时间的航班各自成独立任务，仅同航班号且起降时刻相同才合并日期；daemon 加 queried 查询缓存 + flight_no 过滤 + history_seen 去重。
@@ -121,6 +121,11 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - **验收锚点调整**：原锚点 `海口+666+2026-10-03` 落在国庆屏蔽区间内（按真实规则该档该日不可兑），移到屏蔽区间外的周六 **2026-10-10**（双向 102 条，仍 100~120）；`test_query_from_to_direction` 同步换日。
   - 其他：`notification_history.jsonl` 运行数据入 .gitignore；git 一次性提交 `96844a9`（17 文件 1684 insertions），工作区干净。
   - 验证：pytest 180 passed、pnpm build OK（dist/index-B52nWOjl.js）、web_api 重启后 meta 下发规则 + 查询屏蔽 + 页面 200 全过。
+- [x] **第 8 轮迭代（2026-09-04，纯前端，测试 180）**：
+  - 排查「产品档位多了一个 3666」：航线查询搜索表单档位 Select 内联 options 有手误残留 `{label:'3666', value:'3666'}`（真实可兑档位只有 666/2666），已删除；TIER_OPTIONS 里的 66666（历史遗留「全量底册」档，后端 sediment 无该档记录）保留未动，批转/编辑弹窗仍可展示。
+  - **日期限制「只能查/显示当天及以后」**（今天的日期不允许选早于今天）：航线查询单日/区间选择器加 `disabledDate` 禁过去；班期日历新增「已过期」状态——过去日期灰底 + not-allowed、无 ✓、tooltip「已过期（仅可查看当天及以后）」，图例新增灰点（`.cal-cell-past` / `.cal-dot-past`，含暗色主题）；批转弹窗日期池（openBatch 生成 + 档位条件 onChange 重算）与编辑弹窗日期池（dateOptions + 联动 useEffect + editRow 兜底池）统一按 `todayStr` 过滤过去日期。后端 `query()` 不加强制，避免测试随真实日期推移挂掉（限制全在前端入口）。
+  - 去掉监控任务列表头部说明文字「15 秒自动刷新 · 同一航班多个监控日期已合并；不同航班分别成条」，「去航线查询添加」按钮保留。
+  - 验证：pnpm build OK（dist/index-BunzIT-l.js，产物中 3666 出现 0 次、含「已过期」文案）、pytest 180 passed（后端未动）、运行中 web_api 直接服务新产物无需重启。git 提交见提交记录。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 

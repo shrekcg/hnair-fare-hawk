@@ -192,6 +192,7 @@ body {
   transition: background 0.15s;
 }
 .cal-cell-blank { visibility: hidden; }
+.cal-cell-past { background: #fafafa; color: rgba(0, 0, 0, 0.25); cursor: not-allowed; }
 .cal-cell-off { color: rgba(0, 0, 0, 0.22); }
 .cal-cell-no { background: #fafafa; color: rgba(0, 0, 0, 0.45); }
 .cal-cell-ok {
@@ -237,6 +238,7 @@ body {
 .cal-dot-ok { background: var(--color-success); }
 .cal-dot-no { background: #d9d9d9; }
 .cal-dot-off { background: #f0f0f0; border: 1px solid #ededed; }
+.cal-dot-past { background: #d9d9d9; opacity: 0.55; }
 .cal-swipe-hint { font-size: 12px; color: #bfbfbf; margin-left: auto; }
 /* 适配暗色主题 */
 [data-theme='dark'] .cal-wrap { background: #141414; border-color: #303030; }
@@ -244,6 +246,7 @@ body {
 [data-theme='dark'] .cal-week { color: rgba(255, 255, 255, 0.45); }
 [data-theme='dark'] .cal-cell { color: rgba(255, 255, 255, 0.85); }
 [data-theme='dark'] .cal-cell-off { color: rgba(255, 255, 255, 0.18); }
+[data-theme='dark'] .cal-cell-past { background: #1f1f1f; color: rgba(255, 255, 255, 0.2); }
 [data-theme='dark'] .cal-cell-no { background: #262626; color: rgba(255, 255, 255, 0.45); }
 [data-theme='dark'] .cal-cell-ok { background: #162312; border-color: #274916; color: #95de64; }
 [data-theme='dark'] .cal-legend { color: rgba(255, 255, 255, 0.65); }
