@@ -6,7 +6,7 @@
 
 ---
 
-## 1. 项目快照（2026-09-04，第 10 轮迭代后）
+## 1. 项目快照（2026-09-04，第 10 轮迭代 + UI 深化收尾后）
 
 - **是什么**：海航随心飞（666/2666 会员专享价）机票低价监控 + 航线查询控制台。监控任务命中低价（≤199 元）自动推微信/飞书等渠道通知；航线查询基于底表静态数据 + 官方实时查价。
 - **路径**：`/Users/Wcg/Desktop/Project_local/海航监控`（用户桌面，会持续迭代）
@@ -15,9 +15,9 @@
 - **服务进程（以 `pgrep -fl "daemon.py|web_api.py|sync_from_price_api|progress_reporter"` 为准，pid 文件常过期）**：
   - web_api：bash 包装 33125 + Python 33207（第 10 轮重启）
   - daemon：bash 包装 33213 + Python 33296（第 10 轮重启，监控 2 条任务）
-  - 自扫：bash 包装 44415 + Python 44497（`--supervised --interval 60`，进度约 80%，输出见 `/tmp/autoscan.log`）
+  - 自扫：bash 包装 54850 + Python 54934（`--supervised --interval 60`，reset 后全量重扫第 1 轮，输出见 `/tmp/autoscan.log`）
   - 进度汇报 watchdog：bash 包装 17608 + Python 17690（`progress_reporter.py`，每 10% 节点推飞书）
-- **git HEAD**：`188b207`（feat: 第 9 轮迭代补遗 — Graphite Night 主题重构；前一提交 `9ff7736` 观测库价格快照落库），工作区干净
+- **git HEAD**：`2689bb3`（feat: 监控任务航线/起降时间加粗加深）；此前依次为 `f198573`（浏览器评审 6 条：状态带调浅/ghost 按钮文字/票据卡片布局/提示可关闭/统计卡语义）与 `7ab77d7`（Graphite Night 文字可读性修复），工作区干净
 - **验证基线**：pytest 181 passed（约 18s）；`pnpm build` OK，当前产物 `web/dist/assets/index-BsaoFcvD.js` / `index-6perWR6R.css`（dist 不入库，构建产物覆盖即生效，前端改动**无需重启 web_api**）
 
 ---
@@ -26,8 +26,8 @@
 
 | 路径 | 作用 |
 |---|---|
-| `web/src/App.jsx` (~2741 行) | 全部前端页面/组件（多 tab 常驻挂载，display:none 切换；command bar 与主题切换） |
-| `web/src/styles.css` | 航线雷达台全局样式、浅/暗色 token、响应式与 reduced-motion；班期日历 cal-* 系列 |
+| `web/src/App.jsx` (~2741 行) | 全部前端页面/组件（多 tab 常驻挂载，display:none 切换；command bar、主题切换、批转成功摘要、统计卡语义文案） |
+| `web/src/styles.css` | Graphite Night 全局 token（浅/暗）、控件/表格/状态带/按钮样式与 ghost 规则、响应式与 reduced-motion；班期日历 cal-* 系列 |
 | `web/src/icons.jsx` / `cityProvince.js` | lucide 图标包装 / 175 城省份映射 |
 | `web_api.py` | HTTP API：/api/tasks/*、/api/flights/*、/api/notify/*、/api/price_query 等；`_build_state`/`_build_task_rows` 组装页面状态 |
 | `daemon.py` | 监控主循环：任务展开/查价/阈值命中/渠道通知；queried 缓存、任务错峰 |
@@ -79,7 +79,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 - **监控任务**：`tasks.json`（不入库）；同航线+航班号+起降时刻分组、日期合并且行内展示最多 4 个+「+N」；任务不能手动建，只能从航线查询批转/编辑/启停/删除。
 - **通知**：7 渠道（微信 Server酱/企业微信/钉钉/Bark/ntfy/飞书）；important 加急默认开、critical 强制全渠道 + 通知历史；飞书长连接 `feishu_ws.py` 收卡片回执；**加急权限 `im:message.urgent` 已于 2026-09-04 由用户开通**（遗留关闭）。
 - **观测/校正优先级**：实时观测（海航查价）> 第三方校正（落底表）> 旧静态；班期/可飞日期**绝不回写**。实时观测的价格/会员档位/舱位/余票会落观测库 `data/sediment/observations.json` 的 `price_snapshot` 子对象（带 `queried_at` 时效值，新查询覆盖更新、无价格时保留旧快照），只作历史参考、**绝不回写底表**；`apply_to_record` 仍只消费时刻类字段。
-- **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；浅/暗主题跟随系统并可手动切换；查价频控锁（前端锁 + 后端 min_interval+429）。
+- **前端结构**：紧凑 command bar + 六个 tab 常驻挂载（不要在切 tab 时条件卸载组件）；航段状态线作为航线识别元素；Graphite Night 浅/暗主题（中性石墨 + 薄荷主色，非偏蓝）跟随系统并可手动切换；浅色主题总览状态带为浅石墨深底 + 亮字（`--color-on-strong*` 面板专用 token）；ghost 主按钮须排除全局背景覆盖（`:not(.ant-btn-background-ghost)`）；监控任务表航线/起降时间加粗加深；统计卡文案与「观测/命中」语义对齐；查价频控锁（前端锁 + 后端 min_interval + 429）。
 
 ---
 
@@ -137,7 +137,7 @@ lsof -nP -i :8501   # 端口占用/连接状况
 
 ## 7. 当前遗留与待办
 
-- **「去航线查询添加」按钮**：第 8 轮只删了头部说明文字、按钮保留；用户原话有歧义，若指按钮需再确认。
+- **已解决**：顶部说明文字已删、「去航线查询添加」按钮保留为任务入口（ghost 文字可见性已修复）；无需再确认。
 - **规则近似值**：春运区间（02-02~03-13）为 2026 农历近似换算；五一/暑运/十一为法定±1 天，航季外不影响当前选择。
 - **自扫**：`scripts/sedimentation/sync_from_price_api.py --supervised --interval 60` 后台续跑中（约 80.6%，输出 `/tmp/autoscan.log`）；全量约 21.6h。
   - **已知特性**：empty 任务会进 failed 并反复重试（脚本 empty 分支未置 task_done，与注释「empty 视为完成」不符）——BAR→HAK 等空航线被重试属正常，不阻塞整体进度。

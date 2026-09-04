@@ -17,13 +17,13 @@
 **协作契约（必须遵守，详见 AGENT_HANDOFF.md §6）**
 - Git：每批功能一个提交（`feat: 第 N 轮迭代 — …` / `docs:` / `data:` / `fix:`，中文、可读），提交信息末尾附验证结果；工作区保持干净；运行数据/凭证（config.json、tasks.json、runtime_state.json、notification_history.jsonl、web/dist/ 等）绝不入库。
 - 改动：最小改动、只动相关文件；改前先读再改；不添加臆测功能；前端改默认补暗色主题、后端改默认补 pytest 用例；破坏性/不可逆操作先问用户。
-- 验证：前端改必 `cd web && pnpm build` 成功，交互涉及时用 Playwright 冒烟（系统 Chrome：`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`，playwright 包在 `/Users/Wcg/.npm/_npx/360550e4913b8759/node_modules/playwright`，可参考 /tmp 下既有脚本）；后端改必 `.venv/bin/python -m pytest tests/ -q` 全量（当前 180 passed）。
+- 验证：前端改必 `cd web && pnpm build` 成功，交互涉及时用 Playwright 冒烟（系统 Chrome：`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`，playwright 包在 `/Users/Wcg/.npm/_npx/360550e4913b8759/node_modules/playwright`，可参考 /tmp 下既有脚本）；后端改必 `.venv/bin/python -m pytest tests/ -q` 全量（当前 181 passed）。
 - 热加载边界：改前端 build 即可，web_api 无需重启；**改后端 Python 必须重启对应服务**——按 AGENT_HANDOFF.md §3：先 `lsof -nP -i :8501` 确认端口释放，kill 要同时停 bash 包装 + Python 子进程，启动用 `env -u ELECTRON_RUN_AS_NODE .venv/bin/python web_api.py` 且必须由 harness 以 run_in_background 方式运行（严禁命令里 `&` 自后台化，进程组会被清理）。
 - 测试时间炸弹：后端不得写"相对今天"的硬限制/断言，锚点日期用固定值（如 2026-10-10）。
 - 每轮收尾：更新 README（结构性变化）/ PROJECT_NOTES（进度条目）/ AGENT_HANDOFF（§1 快照与机制如有变化），并更新 agent 侧记忆；然后 git 提交，最后 `git status` 干净。
 - 敏感约束：任何输出不回显完整凭证（SendKey 掩码、AppSecret 永不回显、票据摘要去 query）；不读 `.project_config.toml` / `.vault.toml`。
 
-**当前基线（2026-09-04，第 9 轮后）**：pytest 180 passed；pnpm build 产物 `web/dist/assets/index-DEzNlizm.js` / `index-B3yj8J2O.css`；git HEAD 为第 9 轮航线雷达台视觉优化提交（以 `git log` 为准）；遗留事项见 AGENT_HANDOFF.md §7（如有不明，先读文档再问用户，不猜）。
+**当前基线（2026-09-04，第 10 轮迭代 + UI 深化后）**：pytest 181 passed；pnpm build 产物 `web/dist/assets/index-BsaoFcvD.js` / `index-6perWR6R.css`；git HEAD 为 `2689bb3`（监控任务加粗加深，以 `git log` 为准）；前端为 Graphite Night 石墨夜航浅/暗主题；遗留事项见 AGENT_HANDOFF.md §7（如有不明，先读文档再问用户，不猜）。
 
 开始工作后，按用户指令执行；每轮交付用中文，结论先行，复杂任务收尾四段：做了什么 / 验证了什么 / 遗留限制与风险 / 是否更新了记忆。
 
