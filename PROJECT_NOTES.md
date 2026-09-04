@@ -122,7 +122,7 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - 其他：`notification_history.jsonl` 运行数据入 .gitignore；git 一次性提交 `96844a9`（17 文件 1684 insertions），工作区干净。
   - 验证：pytest 180 passed、pnpm build OK（dist/index-B52nWOjl.js）、web_api 重启后 meta 下发规则 + 查询屏蔽 + 页面 200 全过。
 - [x] **第 8 轮迭代（2026-09-04，纯前端，测试 180）**：
-  - 排查「产品档位多了一个 3666」：航线查询搜索表单档位 Select 内联 options 有手误残留 `{label:'3666', value:'3666'}`（真实可兑档位只有 666/2666），已删除；TIER_OPTIONS 里的 66666（历史遗留「全量底册」档，后端 sediment 无该档记录）保留未动，批转/编辑弹窗仍可展示。
+  - 排查「产品档位多了一个 3666」：航线查询搜索表单档位 Select 内联 options 有手误残留 `{label:'3666', value:'3666'}`（真实可兑档位只有 666/2666），已删除。
   - **日期限制「只能查/显示当天及以后」**（今天的日期不允许选早于今天）：航线查询单日/区间选择器加 `disabledDate` 禁过去；班期日历新增「已过期」状态——过去日期灰底 + not-allowed、无 ✓、tooltip「已过期（仅可查看当天及以后）」，图例新增灰点（`.cal-cell-past` / `.cal-dot-past`，含暗色主题）；批转弹窗日期池（openBatch 生成 + 档位条件 onChange 重算）与编辑弹窗日期池（dateOptions + 联动 useEffect + editRow 兜底池）统一按 `todayStr` 过滤过去日期。后端 `query()` 不加强制，避免测试随真实日期推移挂掉（限制全在前端入口）。
   - 去掉监控任务列表头部说明文字「15 秒自动刷新 · 同一航班多个监控日期已合并；不同航班分别成条」，「去航线查询添加」按钮保留。
   - 验证：pnpm build OK（dist/index-BunzIT-l.js，产物中 3666 出现 0 次、含「已过期」文案）、pytest 180 passed（后端未动）、运行中 web_api 直接服务新产物无需重启。git 提交见提交记录。
