@@ -1,7 +1,7 @@
 # 海航监控 · 项目说明与开发约定
 
 > 本文件是本项目（`/Users/Wcg/Desktop/Project_local/海航监控`）的常驻说明，任何 agent 接手前先读我。
-> 更新时间：2026-09-03
+> 更新时间：2026-09-04
 
 ## 一、这是什么
 
@@ -38,15 +38,16 @@ GitHub: huiMiluMilu/hna-hna-low-fare-monitor-skill-shihui，现已大幅自研�
 │   └── apply_observations.py     # 观测固化进底表
 ├── data/sediment/
 │   ├── flights_normalized.json    # 正式底表
+│   ├── tier_block_rules.json      # 档位×日期屏蔽规则（666/2666 条款，单一事实源，meta 下发前端）
 │   ├── observations.json          # 自扫观测（dict，key=航班号|城市|城市）
 │   ├── sync_from_price_api_progress.json  # 自扫进度（done/failed/total）
 │   ├── third_party/               # 第三方校正数据 + README
 │   └── snapshots/ versions.json   # 合入快照与版本记录
-├── tests/                  # pytest（当前 170 个）
+├── tests/                  # pytest（当前 180 个）
 ├── city_codes.py           # 城市→三字码
 ├── start_all.sh / stop_all.sh
 ├── requirements.txt
-├── .gitignore              # 已排除 config.json / tasks.json / runtime_state.json / run_log.txt / .venv
+├── .gitignore              # 已排除 config.json / tasks.json / runtime_state.json / run_log.txt / .venv / notification_history.jsonl
 ├── README.md               # 项目简介与快速使用
 └── docs/notify_channels_guide.md   # 消息通知配置指南（企微/飞书/钉钉/Bark/ntfy）
 ```
@@ -111,6 +112,15 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - 监控任务**多日期行收敛**：日期行最多显示前 3 个日期 + 「+N」（真实任务 HU7851 52 天 / Y87569 50 天），鼠标悬停 Tooltip 查看全部日期；航线列固定 width 320——原实现日期 Tag 平铺会让 flex-wrap 的 max-content 把列撑到整行一字排开的宽度，横向滚很久。
   - 航线查询卡片去掉右上角「底表 N 条 · 航季…」底标（同时移除 flightMeta 请求）。
   - 前端 UI 关键坑备忘：ChannelCard 无条件 `fields.some()`，微信/飞书卡无 fields → 全站白屏（`Cannot read properties of undefined (reading 'some')`），已给 `fields = []` 默认值。
+- [x] **第 7 轮迭代 + 档位×日期真实规则底表化（2026-09-04，测试 180，提交 96844a9）**：
+  - 前端第 5 批 6 项：去批转弹窗 Alert；航线查询「冻结查询列」默认关；任务列表航线列 320→520、日期行单行最多 4 个 Tag +「+N」悬停看全部；操作列 250→190（Switch 改小 Button + icon-only 编辑/删除）；监控频率卡去掉「实时查价」对比说明。
+  - 日夜间隔确认（用户已确认）：config.json `polling`（day 90-240s / night 300-600s）+ scheduler.py 按时段随机取整秒（07-23 日间、23-07 夜间）；daemon 自适应（有价→减半保底 min，无价→×1.5 封顶 night_max*2）。
+  - **档位×日期真实规则**（搜狗公众号「666元海航随心飞」条款 × 参考资料/sxfroute 交叉验证，推翻旧中秋猜测）：666 元版屏蔽**春运/五一/暑运/十一**，2666 元版仅屏蔽**春运/暑运**；区间定义：春节=农历腊月十五~正月廿五、五一=法定假期及前后各一天、暑运=7/1~8/31、十一=国庆法定假期及前后各一天（2026 换算 09-30~10-09，与 sxfroute 常量一致）；**中秋 9/25~9/27 不在真实规则内**；2026 秋航季（9/1~10/24）内 666 生效区间只有十一。
+  - **底表实装**：新建 `data/sediment/tier_block_rules.json`（单一事实源：source/notes/tiers，含 label 与 blocks）；`backend/sediment.py` 新增 `tier_block_rules()`（懒加载缓存）/`tier_blocks()`/`product_tiers()`/`date_in_blocks()`/`range_fully_in_blocks()`/`blocked_by_tier()`；`meta()` 下发 `tier_block_rules`；`query()` 指定档位 + 日期/区间落在屏蔽区间内**直接返回空**（666 国庆区间 0 条、2666 不受影响；区间部分重叠保留原始语义由前端收窄）。
+  - 前端：常量改名 `DEFAULT_TIER_BLOCK_RULES`（镜像同份规则兜底，build 时嵌入）；App 根拉 `/api/flights/meta` 归一后传给 Tasks/FlightQuery；批转/编辑弹窗日期池随「档位条件」Select 联动收窄、已选被禁日期自动剔除（666 档选不到 09-30~10-09）。
+  - **验收锚点调整**：原锚点 `海口+666+2026-10-03` 落在国庆屏蔽区间内（按真实规则该档该日不可兑），移到屏蔽区间外的周六 **2026-10-10**（双向 102 条，仍 100~120）；`test_query_from_to_direction` 同步换日。
+  - 其他：`notification_history.jsonl` 运行数据入 .gitignore；git 一次性提交 `96844a9`（17 文件 1684 insertions），工作区干净。
+  - 验证：pytest 180 passed、pnpm build OK（dist/index-B52nWOjl.js）、web_api 重启后 meta 下发规则 + 查询屏蔽 + 页面 200 全过。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 

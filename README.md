@@ -17,8 +17,8 @@ app.py            Streamlit 旧前端（保留复用其读写逻辑，非主入�
 backend/          fetcher（官方查价 + 签名）/ notifier（微信+飞书）/ observations
                   / sediment（底表）/ third_party（第三方校正）/ adapters（平台请求骨架）
 scripts/sedimentation/  数据校正与全量自扫脚本（见下）
-data/sediment/    flights_normalized.json（正式底表）、observations.json（观测库）、
-                  third_party/（第三方校正目录）、snapshots/（合入快照）
+data/sediment/    flights_normalized.json（正式底表）、tier_block_rules.json（档位×日期规则）、
+                  observations.json（观测库）、third_party/（第三方校正目录）、snapshots/（合入快照）
 config.json      本地配置（含凭证模板，不入 git）
 ```
 
@@ -45,6 +45,17 @@ config.json      本地配置（含凭证模板，不入 git）
 4. **实时查价开关**：config.json 的 `price_query`（防风控）——
    - `enabled=false` 时 daemon 不实时查价、自扫脚本直接退出；
    - `min_interval`（默认 8s）限制同一任务的查询间隔；HTTP 429 自动退避。
+
+## 档位×日期规则
+
+随心飞 666 / 2666 两档有可兑日期限制（真实规则来源见
+`data/sediment/tier_block_rules.json` 的 source/notes，搜狗公众号条款 × sxfroute 交叉验证）：
+
+- **666 元版**：屏蔽春运 / 五一 / 暑运 / 十一；**2666 元版**：仅屏蔽春运 / 暑运。
+- 2026 秋航季（9/1~10/24）内 666 生效屏蔽区间为**十一 09-30 ~ 10-09**（2666 不受影响）。
+- 规则由底表下发（`/api/flights/meta` 的 `tier_block_rules`）：航线查询 `product=666` 查屏蔽日返回空；
+  转监控 / 编辑监控的日期池**选不到 666 档被屏蔽的天**（档位条件变化时已选被禁日期自动剔除）。
+- 修改规则只改底表 JSON，无需动前端代码；前端常量仅作加载前的兜底镜像。
 
 ## 数据校正与全量自扫
 
