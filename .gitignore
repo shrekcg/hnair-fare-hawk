@@ -52,3 +52,4 @@ data/sediment/snapshots/
 # 运行观测/自扫进度（动态数据，不入库）
 data/sediment/observations.json
 data/sediment/sync_from_price_api_progress.json
+data/sediment/progress_reporter_state.json
