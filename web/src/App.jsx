@@ -522,8 +522,8 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
       render: (_, t) => (
         <Space direction="vertical" size={3} style={{ padding: '4px 0' }}>
           {/* 标题行：航班号 + 城市（省份） → 城市（省份） + 经停/中转 tag */}
-          <Space size={6} wrap>
-            <span className="mono" style={{ fontWeight: 600 }}>{t.flight_no || '—'}</span>
+          <Space size={6} wrap style={{ fontWeight: 650 }}>
+            <span className="mono" style={{ fontWeight: 700 }}>{t.flight_no || '—'}</span>
             <span className="route-line">
               <span>{cityWithProvince(t.from_city)}</span>
               <i aria-hidden="true" />
@@ -539,7 +539,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
           </Typography.Text>
           {/* 起降时间行 + 经停详情小字 */}
           <Space size={8} wrap>
-            <span className="mono" style={{ fontSize: 12 }}>{t.dep_time || '--:--'} → {t.arr_time || '--:--'}</span>
+            <span className="mono" style={{ fontSize: 12, fontWeight: 650, color: 'var(--color-ink)' }}>{t.dep_time || '--:--'} → {t.arr_time || '--:--'}</span>
             {!(t.dep_time && t.arr_time) && (
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>时刻待查询</Typography.Text>
             )}
