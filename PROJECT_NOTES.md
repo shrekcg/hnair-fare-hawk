@@ -142,6 +142,14 @@ env -u ELECTRON_RUN_AS_NODE .venv/bin/python daemon.py
   - 承接 Graphite Night 主题，修复两处对比度问题：①浅色主题总览深色状态带内正文误用深色 ink（对比约 1.2:1，几乎不可读）——新增 `--color-on-strong` / `--color-on-strong-muted` 语义 token，浅色主题下状态带文字、说明与面板按钮统一用亮色系；②暗色主题 antd `colorTextTertiary` 的 45% 白在 12px 辅助文字上偏暗——暗色下 `.ant-typography-secondary`、`.ant-statistic-title`、`.ant-empty-description` 统一走 `--color-muted`，统计卡/空状态/表内说明达到约 7.5:1。
   - 暗色菜单项由统一 primary 色改回 muted 默认 + 选中/hover primary，导航层级更清晰；浅色主题浅底文字对比恢复（正文约 13:1、次要约 7.5:1）。
   - 仅改 `web/src/styles.css`；未动业务/API/布局；验证：pnpm build OK（index-C3UEApjP.css / index-Bg0buQvw.js）、Playwright 浅色+暗色+移动端（390px）对比度采样与截图通过、移动端无页面横向溢出、console 0 错误；web_api 无需重启。提交见 Git 历史。
+- [x] **浏览器评审 6 条反馈收尾（2026-09-04，纯前端）**：
+  - ①总览状态带颜色过深：浅色主题 `--color-strong-surface` 调浅（#404B54），眉题改亮薄荷（新增 `--color-on-strong-accent`），暗色主题同步微调（#2A333C）；
+  - ②浅色主题「去航线查询添加」等 ghost primary 按钮文字不可见：根因是全局 `.page .ant-btn-primary` 背景覆盖了 ghost 的透明底，改为 `:not(.ant-btn-background-ghost)` 限定实心主按钮 + 显式 ghost 规则；
+  - ③抓包票据卡片布局重排：`更新票据` 上移到描述信息右侧同行，状态标签行紧跟其后，提示 Alert 统一 margin-top，内容未变；
+  - ④航线查询「未选日期」提示支持关闭（`closable` + `onClose`），下次触发未选日期的查询时重新出现；
+  - ⑤总览中间卡语义对齐：「近 24h 低价记录」→「低价命中记录」，描述改为命中目标价提醒条数（档位 666/2666，近 50 条样本）；
+  - ⑥总览历史卡描述改为指向运行日志：「运行日志实时查询（最近 200 行），低价记录最近 50 条」。
+  - 验证：pnpm build OK（index-CUdIpL5c.js / index-6perWR6R.css）、Playwright 浅色/暗色/移动端检查通过（面板色、ghost 文字、提示关闭后再现、卡片布局、无横向溢出、console 0 错误）。提交见 Git 历史。
 
 ### 关键结论（2026-09-02 / 09-03 排查记录）
 

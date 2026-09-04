@@ -19,6 +19,13 @@
   --shadow-raised: 0 14px 32px rgba(20, 23, 27, 0.14);
 }
 
+/* 浅色主题下总览状态带：稍浅石墨 + 亮字，避免过深 */
+:root[data-theme='light'] {
+  --color-strong-surface: #404B54;
+  --color-on-strong-muted: #C4CDD3;
+  --shadow-raised: 0 12px 26px rgba(32, 38, 44, 0.12);
+}
+
 :root[data-theme='dark'], body[data-theme='dark'] {
   --color-ink: #F1F4F6;
   --color-cloud: #14171B;
@@ -30,13 +37,19 @@
   --color-low-price: #F28C82;
   --color-success: #7AD19A;
   --color-border: #39434C;
-  --color-muted: #AAB4BC;
-  --color-strong-surface: #252B32;
-  --color-on-strong: #EAEEF1;
-  --color-on-strong-muted: #A4AFB6;
+ --color-muted: #AAB4BC;
+ --color-strong-surface: #252B32;
+  --color-strong-surface: #2A333C;
+ --color-on-strong: #EAEEF1;
+ --color-on-strong-muted: #A4AFB6;
   --color-disabled: #6E7981;
   --shadow-panel: 0 10px 26px rgba(0, 0, 0, 0.2);
   --shadow-raised: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+/* 总览状态带装饰色（ROUTE RADAR 眉题）：亮薄荷，深浅主题通用 */
+:root[data-theme='light'], :root[data-theme='dark'] {
+  --color-on-strong-accent: #8FD9CB;
 }
 [data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-item,
 [data-theme='dark'] .app-menu.ant-menu-horizontal > .ant-menu-submenu-title {
@@ -112,6 +125,10 @@ body {
 .page .ant-btn-default:hover { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-soft); }
 .page .ant-btn-primary { border-color: var(--color-primary); background: var(--color-primary); box-shadow: none; }
 .page .ant-btn-primary:hover { filter: brightness(1.06); }
+.page .ant-btn-primary:not(.ant-btn-background-ghost) { border-color: var(--color-primary); background: var(--color-primary); box-shadow: none; }
+.page .ant-btn-primary:not(.ant-btn-background-ghost):hover { filter: brightness(1.06); }
+.page .ant-btn-background-ghost.ant-btn-primary { color: var(--color-primary); background: transparent; }
+.page .ant-btn-background-ghost.ant-btn-primary:hover { color: color-mix(in srgb, var(--color-primary) 82%, var(--color-ink)); background: var(--color-primary-soft); }
 .page .ant-btn-dangerous:not(.ant-btn-primary) { color: var(--color-low-price); }
 .app-shell .ant-btn:disabled, .app-shell .ant-btn-disabled { color: var(--color-disabled); border-color: var(--color-border); background: var(--color-raised); }
 .page .ant-input, .page .ant-input-number, .page .ant-picker, .page .ant-select-selector { color: var(--color-ink); border-color: var(--color-border) !important; background: var(--color-surface) !important; }

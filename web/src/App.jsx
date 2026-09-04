@@ -250,15 +250,15 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
         </Col>
         <Col xs={24} sm={8}>
           <Card className="stat-card stat-card-hit">
-            <Statistic title="近 24h 低价记录" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>已观测到价格 ≤ 目标价的记录</div>
+            <Statistic title="低价命中记录" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
+            <div className="muted" style={{ margin: '4px 0 12px' }}>命中监控目标价的提醒条数（档位 666/2666，近 50 条样本）</div>
             <div className="stat-card-footer" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card className="stat-card">
             <Statistic title="历史记录" value={stats.history_count} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>最近 50 条可查</div>
+            <div className="muted" style={{ margin: '4px 0 12px' }}>运行日志实时查询（最近 200 行），低价记录最近 50 条</div>
             <Button type="default" style={{ marginTop: 'auto' }} onClick={() => onGo('history')}>查看历史</Button>
           </Card>
         </Col>
@@ -842,44 +842,53 @@ function TicketSetup({ cfg, onChanged, msg }) {
 
   return (
     <Card title="抓包票据" extra={statusTag}>
-      <Descriptions size="small" column={1}>
-        <Descriptions.Item label="当前票据">
-          {primary ? (primary === 'plus' ? 'PLUS 专享' : '普通票价') : '—'}
-        </Descriptions.Item>
-        <Descriptions.Item label="请求地址">
-          {primaryTicket?.configured ? (
-            <Tooltip title={primaryTicket.url}>
-              <Typography.Text ellipsis style={{ maxWidth: 480, display: 'block' }}>{primaryTicket.url}</Typography.Text>
-            </Tooltip>
-          ) : '—'}
-        </Descriptions.Item>
-        <Descriptions.Item label="端点">
-          {primaryTicket?.configured ? (primaryTicket.endpoint_note || '—') : '—'}
-        </Descriptions.Item>
-        <Descriptions.Item label="体积">
-          {primaryTicket ? `${(primaryTicket.length / 1024).toFixed(1)} KB` : '—'}
-        </Descriptions.Item>
-      </Descriptions>
+      <Row gutter={[16, 8]} wrap align="middle">
+        <Col flex="auto" style={{ minWidth: 0 }}>
+          <Descriptions size="small" column={1}>
+            <Descriptions.Item label="当前票据">
+              {primary ? (primary === 'plus' ? 'PLUS 专享' : '普通票价') : '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label="请求地址">
+              {primaryTicket?.configured ? (
+                <Tooltip title={primaryTicket.url}>
+                  <Typography.Text ellipsis style={{ maxWidth: '100%', display: 'block' }}>{primaryTicket.url}</Typography.Text>
+                </Tooltip>
+              ) : '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label="端点">
+              {primaryTicket?.configured ? (primaryTicket.endpoint_note || '—') : '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label="体积">
+              {primaryTicket ? `${(primaryTicket.length / 1024).toFixed(1)} KB` : '—'}
+            </Descriptions.Item>
+          </Descriptions>
+        </Col>
+        {!editing && (
+          <Col flex="none">
+            <Button type="primary" icon={<EditIcon />} onClick={() => setEditing(true)}>更新票据</Button>
+          </Col>
+        )}
+      </Row>
 
-      {derivedType && (
-        <Alert
-          style={{ marginBottom: 12 }}
-          type="info"
-          showIcon
-          message={`未单独抓包${derivedType === 'plus' ? 'PLUS 专享' : '普通票价'}票据：运行时自动从当前票据派生（共用凭证，自动改写端点与档位标记）。`}
-        />
-      )}
-      {!derivedType && hasPlus && hasNormal && (
-        <Alert style={{ marginBottom: 12 }} type="success" showIcon message="PLUS 与普通档均已单独配置，均按原档使用。" />
-      )}
-
-      <Space style={{ margin: '8px 0 12px' }} size={[8, 8]} wrap>
+      <Space style={{ margin: '12px 0 4px' }} size={[8, 8]} wrap>
         <Tag color={primaryTicket?.configured ? 'green' : 'red'}>{primaryTicket?.configured ? '✓' : '✗'} 请求地址已解析</Tag>
         <Tag color={bodyOk ? 'green' : 'red'}>{bodyOk ? '✓' : '✗'} 请求体完整</Tag>
         {primaryTicket?.configured && (
           <Button size="small" type="link" onClick={reveal}>{revealed ? '收起明文' : '查看明文'}</Button>
         )}
       </Space>
+
+      {derivedType && (
+        <Alert
+          style={{ marginTop: 8 }}
+          type="info"
+          showIcon
+          message={`未单独抓包${derivedType === 'plus' ? 'PLUS 专享' : '普通票价'}票据：运行时自动从当前票据派生（共用凭证，自动改写端点与档位标记）。`}
+        />
+      )}
+      {!derivedType && hasPlus && hasNormal && (
+        <Alert style={{ marginTop: 8 }} type="success" showIcon message="PLUS 与普通档均已单独配置，均按原档使用。" />
+      )}
 
       {revealed && (
         <div className="raw-box">
@@ -888,11 +897,7 @@ function TicketSetup({ cfg, onChanged, msg }) {
         </div>
       )}
 
-      {!editing ? (
-        <div style={{ textAlign: 'right' }}>
-          <Button type="primary" icon={<EditIcon />} onClick={() => setEditing(true)}>更新票据</Button>
-        </div>
-      ) : (
+      {editing && (
         <div>
           <div className="muted" style={{ marginBottom: 6 }}>
             粘贴后自动识别档位，当前识别为
@@ -1941,6 +1946,8 @@ function FlightQuery({ msg, onChanged, onGo, priceQuery, tierBlockRules }) {
   const [batchTier, setBatchTier] = useState([]) // 档位条件多选白名单：666/2666/66666；空数组=不限（全部档位）
   const [batchSummary, setBatchSummary] = useState(null)
   const [batchMode, setBatchMode] = useState('single') // 弹窗标题模式：single=转为监控任务 / batch=批量转为监控任务
+  // 「未选日期」提示：用户可关闭，下次查询（重新触发该逻辑）时再出现
+  const [dateWarnDismissed, setDateWarnDismissed] = useState(false)
   // 冻结查询列：开启时固定首列（航班号）+ 后四列（原价/优惠价/余票舱位/操作），横向滚动时仍可见
   // 默认不冻结（用户手动开启）
   const [freezeQuery, setFreezeQuery] = useState(false)
@@ -2008,6 +2015,7 @@ function FlightQuery({ msg, onChanged, onGo, priceQuery, tierBlockRules }) {
     setSeatsInfo(null)
     setPriceTried(false)
     setSelKeys([])
+    setDateWarnDismissed(false)
     try {
       const queryParams = {
         from: from ? cityNameOf(from) : '',
@@ -2434,11 +2442,13 @@ function FlightQuery({ msg, onChanged, onGo, priceQuery, tierBlockRules }) {
             </Space>
           }
         >
-          {noDateWarn && (
+          {noDateWarn && !dateWarnDismissed && (
             <Alert
               style={{ marginBottom: 12 }}
               type="warning"
               showIcon
+              closable
+              onClose={() => setDateWarnDismissed(true)}
               message={null}
               description={
                 <span style={{ fontSize: 12 }}>
