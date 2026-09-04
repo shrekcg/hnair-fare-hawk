@@ -1,0 +1,29 @@
+ <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="w-t w-d">
+   <title id="w-t">hnair-fare-hawk 工作流</title>
+   <desc id="w-d">三阶段数据流：静态底表提供航线与档位规则，查价引擎实时请求官方接口，判定引擎命中阈值后推送多渠道通知。</desc>
+   <rect width="1200" height="300" rx="24" fill="#0F1419"/>
+   <g transform="translate(44 56)">
+     <rect x="0" y="0" width="300" height="150" rx="12" fill="#161D26" stroke="#2A3442" stroke-width="2"/>
+     <text x="20" y="34" font-family="-apple-system, PingFang SC, sans-serif" font-size="19" font-weight="600" fill="#E6EDF3">① 静态底表</text>
+     <text x="20" y="66" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#8FA0B0">航线 · 班期 · 起降时刻</text>
+     <text x="20" y="92" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#8FA0B0">可飞日期 · 666/2666 档位规则</text>
+     <text x="20" y="124" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#5B9BD3">flights_normalized.json</text>
+     <path d="M 300 75 L 340 75" stroke="#5B9BD3" stroke-width="3"/><path d="M 340 75 L 328 68 M 340 75 L 328 82" stroke="#5B9BD3" stroke-width="3" fill="none"/>
+   </g>
+   <g transform="translate(424 56)">
+     <rect x="0" y="0" width="330" height="150" rx="12" fill="#161D26" stroke="#2A3442" stroke-width="2"/>
+     <text x="20" y="34" font-family="-apple-system, PingFang SC, sans-serif" font-size="19" font-weight="600" fill="#E6EDF3">② 查价引擎</text>
+     <text x="20" y="66" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#8FA0B0">官方接口实时查价（需自备票据）</text>
+     <text x="20" y="92" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#8FA0B0">价格 · 经停 · 余票 · 舱位</text>
+     <text x="20" y="124" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#5B9BD3">daemon.py 轮询 + 频控</text>
+     <path d="M 330 75 L 370 75" stroke="#5B9BD3" stroke-width="3"/><path d="M 370 75 L 358 68 M 370 75 L 358 82" stroke="#5B9BD3" stroke-width="3" fill="none"/>
+   </g>
+   <g transform="translate(834 56)">
+     <rect x="0" y="0" width="322" height="150" rx="12" fill="#16304D" stroke="#2F5580" stroke-width="2"/>
+     <text x="20" y="34" font-family="-apple-system, PingFang SC, sans-serif" font-size="19" font-weight="600" fill="#E6EDF3">③ 判定与通知</text>
+     <text x="20" y="66" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#C7D0DA">目标价 + 档位 + 余票三条件判定</text>
+     <text x="20" y="92" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#C7D0DA">命中 → 微信 / 飞书 / 钉钉 / Bark…</text>
+     <text x="20" y="124" font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#4FAE77">≤ ¥199 自动推送（重要提醒加急）</text>
+   </g>
+   <text x="44" y="248" font-family="-apple-system, PingFang SC, sans-serif" font-size="15" fill="#66758A">价格 / 余票为实时观测，绝不改写底表静态事实；票据与运行数据（config.json 等）不进入版本库。</text>
+ </svg>

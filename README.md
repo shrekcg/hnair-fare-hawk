@@ -1,95 +1,102 @@
-# 海航监控
-
-本机常驻的海航机票低价监控 + 航班数据校正工具。
-
-- **监控**：按你设定的航线/日期/阈值轮询查价，命中低价后推送**微信（Server酱）/ 飞书**。
-- **数据校正**：把航班时刻、航站楼、经停等基础事实校正进正式底表，供页面与查询使用。
-- **界面**：React 控制台采用「航线雷达台」视觉（参考「个人工作台 V0.4」Tabler 浅色专业后台：浅灰底 #F6F8FB、白卡片、深蓝主色 #0054A6、等宽数据、深色终端日志、统计卡与重点强调卡），提供紧凑 command bar、监控状态带、航段线、主题跟随系统并可手动切换、移动端适配；监控任务表航线与起降时间加粗加深突出数据重点。
-- 只读查询与提醒，**不**自动购票/锁票/付款。
-
-## 架构
-
-```
-web/              React 18 + AntD 5 + Vite 前端（构建产物 web/dist）
-web_api.py        轻量 Web API（标准库 http.server），绑定 127.0.0.1:8501，
-                  托管静态页面 + 读写 config/tasks/历史/日志
-daemon.py         常驻抓价循环：按 config.json 轮询任务、命中阈值推送通知
-app.py            Streamlit 旧前端（保留复用其读写逻辑，非主入口）
-backend/          fetcher（官方查价 + 签名）/ notifier（微信+飞书）/ observations
-                  / sediment（底表）/ third_party（第三方校正）/ adapters（平台请求骨架）
-scripts/sedimentation/  数据校正与全量自扫脚本（见下）
-data/sediment/    flights_normalized.json（正式底表）、tier_block_rules.json（档位×日期规则）、
-                  observations.json（观测库）、third_party/（第三方校正目录）、snapshots/（合入快照）
-config.json      本地配置（含凭证模板，不入 git）
-```
-
-## 启动 / 停止
-
-```bash
-./start_all.sh   # 一键启动 daemon + Web 控制台（自动构建缺失的 web/dist）
-./stop_all.sh    # 停止双进程
-```
-
-- 页面：http://127.0.0.1:8501（**仅本机可访问**）
-- 日常由 PenguinHarness 托管双进程时，用 harness 的 run_in_background 常驻，不使用 nohup 脚本。
-- 顶栏主题按钮默认跟随系统偏好，也可手动切换浅色/暗色；选择保存在当前浏览器本地。
-
-## 使用流程
-
-1. **票据管理**（顶栏「监控设置」→「抓包票据」卡片）：粘贴海航官网抓包的 cURL——普通票价入口
-   `airLowFareSearch`，PLUS 专享入口 `ffl/airLowFareSearch`（两者需分别抓取）。
-   保存即生效，daemon 每轮重读 config，无需重启；「更新票据」按钮与状态标签同置于票据信息右侧。
-2. **任务**：从「航线查询」结果「转为监控任务」（单个/批量）添加，或在「监控设置 → 任务」中启停/编辑/删除。
-   同一航班号且起降时刻相同会自动合并多个日期为一条任务；日期较多时鼠标悬停
-   日期行可查看全部日期。
-3. **设置**：通知渠道（微信 Server酱、企业微信、飞书、钉钉、Bark、ntfy）、加急开关、
-   飞书加急/卡片确认/长连接（配置步骤见 `docs/notify_channels_guide.md`）、监控时段、代理、签名刷新开关。
-4. **实时查价开关**：config.json 的 `price_query`（防风控）——
-   - `enabled=false` 时 daemon 不实时查价、自扫脚本直接退出；
-   - `min_interval`（默认 8s）限制同一任务的查询间隔；HTTP 429 自动退避。
-
-## 档位×日期规则
-
-随心飞 666 / 2666 两档有可兑日期限制（真实规则来源见
-`data/sediment/tier_block_rules.json` 的 source/notes，搜狗公众号条款 × sxfroute 交叉验证）：
-
-- **666 元版**：屏蔽春运 / 五一 / 暑运 / 十一；**2666 元版**：仅屏蔽春运 / 暑运。
-- 2026 秋航季（9/1~10/24）内 666 生效屏蔽区间为**十一 09-30 ~ 10-09**（2666 不受影响）。
-- 规则由底表下发（`/api/flights/meta` 的 `tier_block_rules`）：航线查询 `product=666` 查屏蔽日返回空；
-  转监控 / 编辑监控的日期池**选不到 666 档被屏蔽的天**（档位条件变化时已选被禁日期自动剔除）。
-- 修改规则只改底表 JSON，无需动前端代码；前端常量仅作加载前的兜底镜像。
-
-## 数据校正与全量自扫
-
-- **第三方校正**（低频、按次、慎用）：把任意平台的航班计划数据按
-  `data/sediment/third_party/README.md` 的 JSON 格式放入 `third_party/` 目录，
-  运行 `scripts/sedimentation/sync_third_party.py --apply` 合入底表（只校正
-  起降时刻/航站楼/经停，不覆盖航线集合与班期）。已调研：高德/腾讯无航班 API、
-  聚合数据「航班动态」维护中、AviationStack 免费档国内覆盖弱、飞常准需企业认证。
-- **免费全量自扫**（推荐）：`scripts/sedimentation/sync_from_price_api.py` 用自有
-  官方查价接口按「航线+日期」整批免费扫表，自动断点续传、异常自动恢复：
-
-  ```bash
-  # 只打印计划（不请求）
-  .venv/bin/python scripts/sedimentation/sync_from_price_api.py --dry-run
-  # 无人值守全自动（默认 60s 间隔；中断/失败自动恢复，直到全部完成）
-  .venv/bin/python scripts/sedimentation/sync_from_price_api.py --supervised
-  # 扫完把观测固化进正式底表
-  .venv/bin/python scripts/sedimentation/apply_observations.py
-  ```
-
-  进度文件 `data/sediment/sync_from_price_api_progress.json` 记录 done/failed/total，
-  每条任务完成即时落盘，Ctrl-C / 掉电 / 崩溃后重跑即续扫；完成/暂停/中断都会推送
-  通知（`--no-notify` 关闭）。
-
-## 文档索引
-
-- `PROJECT_NOTES.md` —— 项目说明、目录结构、git 约定、当前进度与关键结论
-- `docs/notify_channels_guide.md` —— 消息通知配置指南（企微/飞书/钉钉/Bark/ntfy 小白步骤）
-- `docs/消息通知渠道调研.md` —— 渠道能力与个人门槛调研
-- `docs/plus-remain-seat-feasibility.md` —— PLUS 余票监控可行性结论
-
-## 安全
-
-`config.json`、`tasks.json`、`run_log.txt`、`.env` 含本地配置与敏感信息，已在
-`.gitignore` 排除，不提交仓库；分享/发布时只保留空白示例。
+ # hnair-fare-hawk · 海航随心飞低价雷达
+ 
+ <p align="center">
+   <img src="./assets/readme/hero.svg" width="100%" alt="hnair-fare-hawk：海航随心飞 666/2666 会员专享价低价监控雷达，命中目标价自动推送提醒">
+ </p>
+ 
+ <p align="center">
+ <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg">
+  <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-0054A6.svg">
+ <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB.svg">
+   <img alt="Local only" src="https://img.shields.io/badge/%E4%BB%85%E6%9C%AC%E6%9C%BA-127.0.0.1%3A8501-98A2B3.svg">
+ </p>
+ 
+ 盯住海航随心飞 **666 / 2666 会员专享价**：底表给出航线、班期与可飞日期，价格、经停和余票由官方接口**实时查价**，命中目标价（默认 ≤ ¥199）自动推送到微信 / 飞书等渠道。
+ 
+ > 只读监控与提醒，**不**自动购票 / 锁票 / 付款。请自备抓包票据并遵守航司服务条款（见[限制与合规](#限制与合规)）。
+ 
+ ## 截图
+ 
+ <p align="center">
+   <img src="./assets/readme/screenshot-overview.png" width="100%" alt="控制台总览：监控状态强调卡、统计卡与最近低价命中列表">
+ </p>
+ 
+ <p align="center">
+   <img src="./assets/readme/screenshot-tasks.png" width="100%" alt="监控任务表：航线、档位、目标价、余票条件与操作">
+ </p>
+ 
+ <p align="center">
+   <img src="./assets/readme/screenshot-mobile-dark.png" width="260" alt="移动端暗色主题：状态卡与监控任务">
+ </p>
+ 
+ ## 为什么这样设计
+ 
+ - **静态与实时分离**：航线 / 班期 / 可飞日期 / 档位规则来自本地底表；价格 / 经停 / 余票 / 舱位永远实时查询，且**绝不回写**底表静态事实。
+ - **档位×日期规则**：666 档屏蔽春运 / 五一 / 暑运 / 十一，2666 档仅屏蔽春运 / 暑运；规则单一事实源（`data/sediment/tier_block_rules.json`），改数据即可，不动代码。
+ - **状态三通道**：运行状态 = 文字 + 圆点 + 颜色，不依赖单一信号；浅 / 暗主题，移动端可用。
+ - **防风控**：前端限频锁 + 后端最小间隔 + 429 自动退避；监控频率可按时段配置。
+ - **低成本**：纯标准库 HTTP 后端 + React 单页前端，无数据库、无 Docker，个人电脑即可常驻。
+ 
+ <p align="center">
+   <img src="./assets/readme/workflow.svg" width="100%" alt="工作流：静态底表 → 官方接口实时查价 → 三条件判定与多渠道通知">
+ </p>
+ 
+ ## 快速开始
+ 
+ ```bash
+ git clone https://github.com/<your-username>/hnair-fare-hawk.git && cd hnair-fare-hawk
+ python3 -m venv .venv && source .venv/bin/activate
+ pip install -r requirements.txt
+ 
+ cd web && pnpm install && pnpm build && cd ..
+ 
+ # 启动（Web 控制台仅监听 127.0.0.1:8501）
+ .venv/bin/python web_api.py
+ 
+ # 另开终端启动监控循环
+ .venv/bin/python daemon.py
+ ```
+ 
+ 打开 http://127.0.0.1:8501：
+ 
+ 1. **“监控设置 → 抓包票据”**粘贴你在海航官网/App 抓取的查询接口 cURL（普通票价入口 `airLowFareSearch`、PLUS 专享入口 `ffl/airLowFareSearch`，抓一份即可自动派生另一档）。票据与令牌仅存本地 `config.json`，**不入版本库**。
+ 2. **“航线查询”**选出发 / 到达 / 日期，把心仪航班“转为监控任务”，设置目标价与余票条件。
+ 3. 命中低价后按已配置渠道推送（微信 Server酱 / 飞书 / 企业微信 / 钉钉 / Bark / ntfy）。
+ 
+ > 票据与令牌、任务、运行日志（`config.json` / `tasks.json` / `*.log` 等）均被 `.gitignore` 排除；请勿提交任何含 Cookie / token 的文件。
+ 
+ ## 通知渠道
+ 
+ | 渠道 | 说明 |
+ | --- | --- |
+ | 微信（Server酱） | 服务号推送，重要提醒可加急 |
+ | 飞书 | 机器人消息 + 交互卡片确认回执（加急） |
+ | 企业微信 / 钉钉 | 群机器人 Webhook |
+ | Bark / ntfy | 手机端轻量推送 |
+ 
+ 配置步骤见 `docs/notify_channels_guide.md`。
+ 
+ ## 目录速览
+ 
+ ```text
+ web/                  React 18 + Ant Design 5 控制台（Vite 构建）
+ web_api.py            轻量 Web API（标准库 http.server，127.0.0.1:8501）
+ daemon.py             监控循环：轮询查价 → 判定 → 通知
+ backend/              fetcher（官方查价）/ sediment（底表）/ channels（多渠道）/ feishu_ws（卡片回执）
+ data/sediment/        底表静态数据与档位规则（入版本库）
+ scripts/sedimentation/  数据校正与非票据全量自扫管线
+ tests/                pytest 测试集
+ docs/                 通知渠道与估价可行性说明
+ ```
+ 
+ ## 限制与合规
+ 
+ - 仅本机运行，绑定 127.0.0.1，不做公网暴露。
+ - 实时查价依赖你**自行抓取的官方接口票据**；接口与签名逻辑由用户维护，本项目不提供任何绕过验证或风控的手段。
+ - 底表数据来自公开产品信息整理，价格与余票仅作个人监控参考。
+ - 请遵守海航及航司的服务条款与当地法律；因使用本工具产生的任何后果由使用者自行承担。
+ 
+ ## License
+ 
+ [MIT](./LICENSE) © 2026 Shrek Wu（晨光）
+ 

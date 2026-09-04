@@ -24,5 +24,44 @@
   "normal_curl": "",
   "plus_curl": "",
   "proxy": "",
-  "sign_refresh": false
+  "sign_refresh": false,
+  "price_query": {
+    "enabled": true,
+    "min_interval": 8
+  },
+  "feishu": {
+    "app_id": "",
+    "app_secret": "",
+    "receiver": "",
+    "enabled": true,
+    "urgent_enabled": true
+  },
+  "wechat": {
+    "enabled": true
+  },
+  "notify_channels": {
+    "urgent_enabled": true,
+    "wecom": {
+      "enabled": false,
+      "corp_id": "",
+      "agent_id": "",
+      "secret": "",
+      "user_id": ""
+    },
+    "dingtalk": {
+      "enabled": false,
+      "webhook": "",
+      "secret": ""
+    },
+    "bark": {
+      "enabled": false,
+      "device_key": "",
+      "server": "https://api.day.app"
+    },
+    "ntfy": {
+      "enabled": false,
+      "topic": "",
+      "server": "https://ntfy.sh"
+    }
+  }
 }

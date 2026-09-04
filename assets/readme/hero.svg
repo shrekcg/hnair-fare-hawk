@@ -1,0 +1,45 @@
+ <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="h-t h-d">
+   <title id="h-t">hnair-fare-hawk · 海航随心飞低价监控雷达</title>
+   <desc id="h-d">深色终端风格标题图：雷达线稿与低价命中终端日志，说明本项目盯住 666/2666 会员专享价并在命中目标价时推送通知。</desc>
+   <defs>
+     <linearGradient id="bgG" x1="0" y1="0" x2="1" y2="1">
+       <stop offset="0" stop-color="#0F1419"/>
+       <stop offset="1" stop-color="#131A23"/>
+     </linearGradient>
+   </defs>
+   <rect width="1200" height="360" rx="26" fill="url(#bgG)"/>
+   <!-- 雷达扫描线稿（项目动机） -->
+   <g opacity="0.5">
+     <path d="M 1080 52 A 176 176 0 0 1 940 228" fill="none" stroke="#2A3442" stroke-width="2"/>
+     <path d="M 1080 52 L 1026 176 L 1080 228 Z" fill="#16304D" stroke="#2F5580" stroke-width="2"/>
+     <line x1="1080" y1="52" x2="1008" y2="86" stroke="#5B9BD3" stroke-width="3"/>
+     <circle cx="1080" cy="52" r="7" fill="#5B9BD3"/>
+   </g>
+   <!-- 标题区 -->
+   <g transform="translate(56 44)">
+     <text x="0" y="22" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" letter-spacing="0.22em" fill="#5B9BD3" font-weight="600">AIRFARE WATCHER · LOCAL-ONLY CONSOLE</text>
+     <text x="0" y="92" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="62" font-weight="700" fill="#E6EDF3">hnair-fare-hawk</text>
+     <!-- 航段线动机：城市点 — 航线 — 箭头 -->
+     <g transform="translate(330 66)">
+       <circle cx="0" cy="0" r="7" fill="#5B9BD3"/>
+       <line x1="14" y1="0" x2="120" y2="0" stroke="#5B9BD3" stroke-width="3"/>
+       <path d="M 120 0 L 104 -8 M 120 0 L 104 8" stroke="#5B9BD3" stroke-width="3" fill="none"/>
+     </g>
+     <text x="0" y="132" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="24" font-weight="600" fill="#C7D0DA">海航随心飞 · 低价监控雷达台</text>
+     <text x="0" y="178" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="18" fill="#8FA0B0">盯住 666 / 2666 会员专享价，命中目标价自动推送提醒。</text>
+     <text x="0" y="206" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif" font-size="18" fill="#8FA0B0">静态底表查航线 · 价格/经停/余票官方接口实时查价。</text>
+     <text x="0" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#66758A">127.0.0.1:8501 · python ≥3.12 · react 18 · no docker</text>
+   </g>
+   <!-- 终端证明区 -->
+   <g transform="translate(748 44)">
+     <rect x="0" y="0" width="396" height="268" rx="14" fill="#161D26" stroke="#2A3442" stroke-width="2"/>
+     <circle cx="20" cy="20" r="6" fill="#E56B61"/><circle cx="40" cy="20" r="6" fill="#E0A849"/><circle cx="60" cy="20" r="6" fill="#4FAE77"/>
+     <text x="20" y="58" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#8FA0B0">$ daemon --poll 90s --tier 666,2666</text>
+     <text x="20" y="94" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#4FAE77">✓ HU7851 · SZX → URC · ¥2080</text>
+     <text x="20" y="122" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#4FAE77">✓ Y87531 · SZX → CGQ · ¥2605 · 经停</text>
+     <text x="20" y="150" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#4FAE77">✓ HU7851 · 4 张 · 666 可兑 · 余票 OK</text>
+     <text x="20" y="190" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#E0A849">★ 价格 ≤ ¥199 → 推送 7 个通知渠道</text>
+     <text x="20" y="226" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#66758A">mon 20:00 后 / 666 屏蔽节假日…</text>
+     <text x="20" y="250" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#C7D0DA">█</text>
+   </g>
+ </svg>
