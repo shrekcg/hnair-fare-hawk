@@ -18,7 +18,7 @@ const TABS = [
   { key: 'tasks', icon: <TasksIcon />, label: '监控任务' },
   { key: 'flights', icon: <CompassIcon />, label: '航线查询' },
   { key: 'notify', icon: <NotifyIcon />, label: '通知管理' },
-  { key: 'monitor', icon: <MonitorIcon />, label: '监控管理' },
+  { key: 'monitor', icon: <MonitorIcon />, label: '监控设置' },
   { key: 'history', icon: <HistoryIcon />, label: '历史日志' },
 ]
 
@@ -250,8 +250,8 @@ function Overview({ data, onGo, onToggleStatus, onChanged, msg }) {
         </Col>
         <Col xs={24} sm={8}>
           <Card className="stat-card stat-card-hit">
-            <Statistic title="近 24h 命中" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
-            <div className="muted" style={{ margin: '4px 0 12px' }}>价格 ≤ 目标价的记录数</div>
+            <Statistic title="近 24h 低价记录" value={stats.hit_count_24h} valueStyle={{ color: 'var(--color-low-price)' }} />
+            <div className="muted" style={{ margin: '4px 0 12px' }}>已观测到价格 ≤ 目标价的记录</div>
             <div className="stat-card-footer" />
           </Card>
         </Col>
@@ -534,7 +534,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
           {/* 机场 / 航站楼行 */}
           <Typography.Text type="secondary" style={{ fontSize: 12, lineHeight: 1.6 }}>
             {t.from_code} · {(t.from_airport || '').replace('机场', '')}{t.from_terminal ? ` · ${t.from_terminal}` : ''}
-            <ChevronRightIcon size={10} style={{ color: '#d9d9d9', margin: '0 4px' }} />
+            <ChevronRightIcon size={10} style={{ color: 'var(--color-muted)', margin: '0 4px' }} />
             {t.to_code} · {(t.to_airport || '').replace('机场', '')}{t.to_terminal ? ` · ${t.to_terminal}` : ''}
           </Typography.Text>
           {/* 起降时间行 + 经停详情小字 */}
@@ -611,7 +611,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
             {t.enabled ? '停止' : '启动'}
           </Button>
           <Tooltip title="编辑">
-            <Button size="small" type="text" icon={<EditIcon />} onClick={() => openEdit(t)} />
+            <Button size="small" type="text" icon={<EditIcon />} aria-label={`编辑 ${t.flight_no || '监控任务'}`} onClick={() => openEdit(t)} />
           </Tooltip>
           <Popconfirm
             title={`删除监控 ${t.from_city} → ${t.to_city}`}
@@ -622,7 +622,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
             onConfirm={() => doDelete(t)}
           >
             <Tooltip title="删除">
-              <Button size="small" type="text" danger icon={<DeleteIcon />} />
+              <Button size="small" type="text" danger icon={<DeleteIcon />} aria-label={`删除 ${t.flight_no || '监控任务'}`} />
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -633,7 +633,7 @@ function Tasks({ data, onChanged, msg, onGo, tierBlockRules }) {
   return (
     <div>
       <Card
-        title={`监控任务（${tasks.length}）`}
+        title={`监控设置 · 任务（${tasks.length}）`}
         extra={
           <Space>
             <Button type="primary" ghost icon={<CompassIcon />} onClick={() => onGo('flights')}>去航线查询添加</Button>
@@ -1118,8 +1118,9 @@ function MonitorSettings({ data, onChanged, msg }) {
         <div className="muted" style={{ marginTop: 8 }}>仅在该时段内轮询抓价；跨天请设置例如 22:00 到 07:00（22:00 ~ 次日 07:00）。</div>
       </Card>
 
-      {/* 高级设置 */}
-      <Card title="高级设置">
+      <Collapse
+        className="advanced-settings"
+        items={[{ key: 'advanced', label: '高级设置（按需展开）', children: (
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12}>
             <Space direction="vertical" size={8}>
@@ -1146,7 +1147,8 @@ function MonitorSettings({ data, onChanged, msg }) {
             </Space>
           </Col>
         </Row>
-      </Card>
+        ) }]}
+      />
     </div>
   )
 }
@@ -1170,20 +1172,20 @@ function channelStatusTag(enabled) {
   return enabled ? <Tag color="green">已启用</Tag> : <Tag color="orange">未启用</Tag>
 }
 
-/* 教学问号：每张渠道卡片标题旁的「?」；hover 显示配置步骤，内含关闭按钮 */
+/* 教学问号支持鼠标悬停、键盘聚焦与点击展开。 */
 function GuideIcon({ title, steps }) {
   const [open, setOpen] = useState(false)
   return (
     <Popover
       open={open}
       onOpenChange={setOpen}
-      trigger="hover"
+      trigger={['hover', 'click']}
       placement="bottomLeft"
       content={
         <div style={{ width: 360 }}>
           <Space style={{ marginBottom: 8, width: '100%', justifyContent: 'space-between' }}>
             <Typography.Text strong>{title}</Typography.Text>
-            <Button size="small" type="text" icon={<DeleteIcon />} onClick={() => setOpen(false)}>关闭</Button>
+            <Button size="small" type="text" icon={<CloseIcon />} aria-label="关闭配置说明" onClick={() => setOpen(false)}>关闭</Button>
           </Space>
           <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, lineHeight: 1.9, maxHeight: 320, overflow: 'auto' }}>
             {steps.map((s, i) => (
@@ -1196,7 +1198,14 @@ function GuideIcon({ title, steps }) {
         </div>
       }
     >
-      <QuestionIcon size={13} style={{ color: '#8c8c8c', cursor: 'help' }} />
+      <Button
+        type="text"
+        size="small"
+        className="guide-button"
+        icon={<QuestionIcon size={14} />}
+        aria-label={`查看${title}`}
+        aria-expanded={open}
+      />
     </Popover>
   )
 }
@@ -1254,7 +1263,7 @@ function ChannelCard({
     <Col xs={24} sm={12} xl={8}>
       <Card
         size="small"
-        className="channel-card"
+        className={`channel-card ${configured ? 'is-configured' : 'is-idle'}`}
         style={{ height: '100%' }}
         title={
           <Space size={6} wrap>
@@ -1680,10 +1689,10 @@ function Notifications({ data, onChanged, msg }) {
       {/* 通知渠道：六张卡片统一样式，标题旁「?」为配置教学 */}
       <Card
         style={{ marginBottom: 16 }}
-        title={<Space><NotifyIcon style={{ color: '#07c160' }} />通知渠道</Space>}
+        title={<Space><NotifyIcon style={{ color: 'var(--color-primary)' }} />通知渠道</Space>}
       >
         <Row gutter={[16, 16]} align="stretch">
-          {channelCards.map((c) => (
+          {channelCards.slice().sort((a, b) => Number(b.configured) - Number(a.configured)).map((c) => (
             <ChannelCard
               key={c.name}
               name={c.name}
@@ -1858,6 +1867,8 @@ function ScheduleCalendar({ rec }) {
       />
       <div
         className="cal-wrap"
+        role="grid"
+        aria-label={`${view.format('YYYY年M月')}班期日历`}
         onTouchStart={dragStart}
         onTouchEnd={dragEnd}
         onTouchCancel={cancelDrag}
@@ -1867,9 +1878,9 @@ function ScheduleCalendar({ rec }) {
         onWheel={onWheel}
       >
         <div className="cal-head">
-          <Button type="text" icon={<ChevronLeftIcon />} disabled={view.isSame(minMonth, 'month')} onClick={() => go(-1)} />
+          <Button type="text" icon={<ChevronLeftIcon />} aria-label="查看上个月" disabled={view.isSame(minMonth, 'month')} onClick={() => go(-1)} />
           <div className="cal-title">{view.format('YYYY年M月')}</div>
-          <Button type="text" icon={<ChevronRightIcon />} disabled={view.isSame(maxMonth, 'month')} onClick={() => go(1)} />
+          <Button type="text" icon={<ChevronRightIcon />} aria-label="查看下个月" disabled={view.isSame(maxMonth, 'month')} onClick={() => go(1)} />
         </div>
         <div className="cal-week">
           {WEEK_LABELS.map((w) => <div key={w}>{w}</div>)}
@@ -1881,9 +1892,11 @@ function ScheduleCalendar({ rec }) {
                 key={i}
                 className={`cal-cell cal-cell-${statusOf(d)}${d.isSame(now, 'day') ? ' cal-cell-today' : ''}`}
                 title={statusText[statusOf(d)]}
+                role="gridcell"
+                aria-label={`${d.format('M月D日')}：${statusText[statusOf(d)]}`}
               >
                 <span className="cal-num">{d.date()}</span>
-                {statusOf(d) === 'ok' && <span className="cal-check" />}
+                {statusOf(d) === 'ok' && <span className="cal-check" aria-hidden="true" />}
               </div>
             ) : (
               <div key={i} className="cal-cell cal-cell-blank" />
@@ -1902,7 +1915,7 @@ function ScheduleCalendar({ rec }) {
   )
 }
 
-function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
+function FlightQuery({ msg, onChanged, onGo, priceQuery, tierBlockRules }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -1926,6 +1939,7 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
   const [batchMinSeats, setBatchMinSeats] = useState(0) // 0=不限
   const [batchCabins, setBatchCabins] = useState([]) // 舱位白名单，空=不限
   const [batchTier, setBatchTier] = useState([]) // 档位条件多选白名单：666/2666/66666；空数组=不限（全部档位）
+  const [batchSummary, setBatchSummary] = useState(null)
   const [batchMode, setBatchMode] = useState('single') // 弹窗标题模式：single=转为监控任务 / batch=批量转为监控任务
   // 冻结查询列：开启时固定首列（航班号）+ 后四列（原价/优惠价/余票舱位/操作），横向滚动时仍可见
   // 默认不冻结（用户手动开启）
@@ -2131,6 +2145,8 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
     setBatchBusy(true)
     try {
       const r = await api.addTasksBatch(items)
+      const dateCount = items.reduce((sum, item) => sum + item.dates.length, 0)
+      setBatchSummary({ groups: items.length, dates: dateCount, message: r.message || '监控任务已创建' })
       msg.success(r.message || '已创建监控任务')
       setBatchOpen(false)
       setSelKeys([])
@@ -2209,14 +2225,14 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
           const via = (s.via || []).join('/')
           const details = s.stops_detail || []
           if (!details.length) {
-            return <div style={{ fontSize: 12, color: '#8c8c8c' }}>经停{via ? `·${via}` : ''}</div>
+            return <div className="muted" style={{ fontSize: 12 }}>经停{via ? `·${via}` : ''}</div>
           }
           return (
             <div style={{ padding: '3px 0' }}>
               {details.map((d, i) => {
                 const where = [d.city, d.airport ? `${d.airport}机场` : '', d.terminal].filter(Boolean).join(' · ')
                 return (
-                  <div key={i} style={{ fontSize: 12, color: '#8c8c8c', lineHeight: 1.5 }}>
+                  <div key={i} className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
                     {where}
                     {d.arrive && <span className="mono">　{d.arrive}→{d.depart || '?'}{d.stay ? `（${d.stay}）` : ''}</span>}
                   </div>
@@ -2263,7 +2279,7 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
       render: (_, r) => {
         if (priceLoading) return <Spin size="small" />
         const v = prices?.plus?.prices?.[r.flight_no]
-        if (v != null) return <span className="mono" style={{ color: '#cf1322', fontWeight: 600 }}>¥{v}</span>
+        if (v != null) return <span className="mono" style={{ color: 'var(--color-low-price)', fontWeight: 600 }}>¥{v}</span>
         if (priceTried) return <Typography.Text type="secondary" style={{ fontSize: 12 }}>未查询到</Typography.Text>
         return <Typography.Text type="secondary">—</Typography.Text>
       },
@@ -2381,6 +2397,23 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
         {errMsg && <Alert style={{ marginTop: 8 }} type="error" showIcon message={errMsg} />}
       </Card>
 
+      {batchSummary && (
+        <Alert
+          className="task-created-summary"
+          type="success"
+          showIcon
+          closable
+          onClose={() => setBatchSummary(null)}
+          message={batchSummary.message}
+          description={
+            <Space wrap>
+              <span>已加入 {batchSummary.groups} 组航班、{batchSummary.dates} 个监控日期。</span>
+              <Button type="link" size="small" onClick={() => onGo('tasks')}>查看监控任务</Button>
+            </Space>
+          }
+        />
+      )}
+
       {result && (
         <Card
           title={`查询结果（${result.count} 条）`}
@@ -2497,9 +2530,9 @@ function FlightQuery({ msg, onChanged, priceQuery, tierBlockRules }) {
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', minWidth: 0, overflow: 'hidden' }}>
                 <span className="mono" style={{ fontWeight: 600, fontSize: 12, flexShrink: 0 }}>{g.flight_no || '—'}</span>
                 <Typography.Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>{g.dep_time || '--:--'} → {g.arr_time || '--:--'}</Typography.Text>
-                <ChevronRightIcon size={9} style={{ color: '#bfbfbf', flexShrink: 0 }} />
+                <ChevronRightIcon size={9} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
                 <span style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{cityWithProvince(g.from_city)}（{g.from_iata}）</span>
-                <ChevronRightIcon size={9} style={{ color: '#bfbfbf', flexShrink: 0 }} />
+                <ChevronRightIcon size={9} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
                 <span style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{cityWithProvince(g.to_city)}（{g.to_iata}）</span>
               </div>
             }
@@ -2590,14 +2623,14 @@ function History({ data, autoRefresh, setAutoRefresh, msg, refresh }) {
 const appTheme = (dark) => ({
   algorithm: dark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
   token: {
-    colorPrimary: dark ? '#58B6C8' : '#2A8FA3',
-    colorInfo: dark ? '#58B6C8' : '#2A8FA3',
-    colorSuccess: dark ? '#63C394' : '#2E8B6B',
-    colorWarning: dark ? '#F0BD62' : '#E3A23C',
-    colorError: dark ? '#F2857B' : '#D96257',
-    colorText: dark ? '#E7F0F4' : '#102A43',
-    colorBgLayout: dark ? '#0B1F2D' : '#EDF3F6',
-    colorBorderSecondary: dark ? '#27465A' : '#D8E3E8',
+    colorPrimary: dark ? '#6BC8B5' : '#317D70',
+    colorInfo: dark ? '#6BC8B5' : '#317D70',
+    colorSuccess: dark ? '#7AD19A' : '#287451',
+    colorWarning: '#F0BC67',
+    colorError: '#F28C82',
+    colorText: dark ? '#F1F4F6' : '#20262C',
+    colorBgLayout: dark ? '#14171B' : '#F4F5F4',
+    colorBorderSecondary: dark ? '#39434C' : '#D6DBD9',
     borderRadius: 10,
     controlHeight: 34,
   },
@@ -2605,7 +2638,7 @@ const appTheme = (dark) => ({
     Button: { fontWeight: 500 },
     Card: { borderRadiusLG: 14 },
     Menu: { itemBorderRadius: 8, itemHeight: 40, horizontalItemBorderRadius: 8 },
-    Table: { headerBg: dark ? '#173243' : '#F4F8FA' },
+    Table: { headerBg: dark ? '#252B32' : '#EDF0EE' },
     Switch: { trackHeight: 22 },
   },
 })
@@ -2691,8 +2724,9 @@ export default function App() {
             onClick={({ key }) => setTab(key)}
             aria-label="主导航"
           />
-          <Tag className="command-status" color={data.config.status === 'running' ? 'green' : 'default'}>
-            <span className="status-dot" style={{ background: data.config.status === 'running' ? 'var(--color-success)' : '#8DA0AA' }} />
+          <span className="nav-more-hint" aria-hidden="true">更多</span>
+          <Tag className="command-status" aria-label={data.config.status === 'running' ? '监控运行中' : '监控已停止'} color={data.config.status === 'running' ? 'green' : 'default'}>
+            <span className="status-dot" style={{ background: data.config.status === 'running' ? 'var(--color-success)' : 'var(--color-muted)' }} />
             {data.config.status === 'running' ? '运行中' : '已停止'}
           </Tag>
           <Button
@@ -2721,6 +2755,7 @@ export default function App() {
               msg={msg}
               priceQuery={data?.config?.price_query}
               onChanged={refresh}
+              onGo={setTab}
               tierBlockRules={tierBlockRules}
             />
           </div>
